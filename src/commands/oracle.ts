@@ -90,6 +90,9 @@ export async function getRollResponse(
 	const response = formatOracleRoll(result);
 
 	// Determine current row index
+	if (result.roll === undefined) {
+		throw new Error("Invalid result: roll is undefined for table item");
+	}
 	const currentRowIndex =
 		rowIndex !== undefined ? rowIndex : findRowIndexByRoll(item, result.roll);
 
@@ -159,7 +162,6 @@ async function handleRoll(
 	for (const result of results) {
 		response += formatOracleRollAsList(result, 0);
 	}
-	response += `-# ◇ ${item.Display.Title}\n`;
 
 	const content = new TextDisplayBuilder().setContent(response);
 	const iconHrefs = getIconHrefs(item);

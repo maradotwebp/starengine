@@ -21,11 +21,14 @@ export interface CollectedRollableItem {
 
 /**
  * Result from rolling a rollable item.
+ * 
+ * For items with tables: roll and result are present.
+ * For container items (categories/oracles without tables): roll and result are undefined, only nestedRolls present.
  */
 export interface RollResult {
 	item: RollableItem;
-	roll: number;
-	result: IRow;
+	roll?: number;
+	result?: IRow;
 	nestedRolls?: Array<RollResult>;
 }
 
@@ -248,34 +251,6 @@ function processNestedRolls(
 }
 
 /**
- * Gets all rollable oracles from an item (category or oracle with sub-oracles).
- */
-function getAllRollableOracles(item: RollableItem): IOracle[] {
-	const oracles: IOracle[] = [];
-
-	// If it's an oracle with a table, return it
-	if ("Table" in item && item.Table && item.Table.length > 0) {
-		return [item as IOracle];
-	}
-
-	// Collect from oracles
-	if ("Oracles" in item && item.Oracles) {
-		for (const oracle of item.Oracles) {
-			oracles.push(...getAllRollableOracles(oracle));
-		}
-	}
-
-	// Collect from categories
-	if ("Categories" in item && item.Categories) {
-		for (const category of item.Categories) {
-			oracles.push(...getAllRollableOracles(category));
-		}
-	}
-
-	return oracles;
-}
-
-/**
  * Roll on a rollable item (oracle or category).
  * Returns a single result if the item has a table, or multiple results if it contains sub-oracles.
  *
@@ -307,20 +282,43 @@ export function rollItem(
 		};
 	}
 
-	// Otherwise, roll on all sub-oracles
-	const oracles = getAllRollableOracles(item);
-	const results: RollResult[] = [];
+	// Otherwise, roll on direct children
+	const nestedRolls: RollResult[] = [];
 
-	for (const oracle of oracles) {
-		const result = rollItem(oracle, categories);
-		if (Array.isArray(result)) {
-			results.push(...result);
-		} else {
-			results.push(result);
+	// Roll on direct oracles
+	if ("Oracles" in item && item.Oracles) {
+		for (const oracle of item.Oracles) {
+			if (isRollable(oracle)) {
+				const result = rollItem(oracle, categories);
+				if (Array.isArray(result)) {
+					// If oracle returns array, add all results as nested
+					nestedRolls.push(...result);
+				} else {
+					nestedRolls.push(result);
+				}
+			}
 		}
 	}
 
-	return results;
+	// Roll on direct categories
+	if ("Categories" in item && item.Categories) {
+		for (const category of item.Categories) {
+			if (isRollable(category)) {
+				const result = rollItem(category, categories);
+				if (Array.isArray(result)) {
+					nestedRolls.push(...result);
+				} else {
+					nestedRolls.push(result);
+				}
+			}
+		}
+	}
+
+	// Return as container result to preserve grouping
+	return [{
+		item,
+		nestedRolls,
+	}];
 }
 
 /**

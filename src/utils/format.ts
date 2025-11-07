@@ -9,6 +9,18 @@ export function formatOracleRoll({
 	result,
 	nestedRolls,
 }: RollResult): string {
+	// Container result (oracle/category without table)
+	if (!roll || !result) {
+		let response = '';
+		if (nestedRolls) {
+			for (const nested of nestedRolls) {
+				response += formatOracleRollAsList(nested);
+			}
+		}
+		return response;
+	}
+
+	// Normal table roll
 	let response = `## 🔮 ${sanitizeResult(result.Result)}\n`;
 	if (result.Summary) {
 		response += `${result.Summary}\n`;
@@ -30,8 +42,34 @@ export function formatOracleRoll({
 export function formatOracleRollAsList(
 	{ item, roll, result, nestedRolls }: RollResult,
 	indentLevel: number = 0,
+	root: boolean = true,
 ): string {
 	const indent = "  ".repeat(indentLevel);
+	
+	// Container result (oracle/category without table) - only show nested rolls with label
+	if (!roll || !result) {
+		if(root) {
+			let response = '';
+			if (nestedRolls) {
+				for (const nested of nestedRolls) {
+					response += formatOracleRollAsList(nested, 0, false);
+				}
+			}
+			response += `-# ◇ ${item.Display.Title}\n`;
+			return response;
+		} else {
+			let response = `${indent}- *${item.Display.Title}*\n`;
+			if (nestedRolls) {
+				for (const nested of nestedRolls) {
+					response += formatOracleRollAsList(nested, indentLevel + 1, false);
+				}
+			}
+			return response;
+		}
+		
+	}
+
+	// Normal table roll
 	let response = `${indent}- **${item.Name}**: ${sanitizeResult(result.Result)}\n`;
 	if (result.Summary) {
 		response += `${indent}  -# ${result.Summary}\n`;
@@ -40,7 +78,7 @@ export function formatOracleRollAsList(
 
 	if (nestedRolls) {
 		for (const nested of nestedRolls) {
-			response += formatOracleRollAsList(nested, indentLevel + 1);
+			response += formatOracleRollAsList(nested, indentLevel + 1, false);
 		}
 	}
 
