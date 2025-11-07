@@ -14,7 +14,7 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "paths": {
-      "dataforged": ["./node_modules/dataforged/dist/types/index.d.ts"]
+      "dataforged": ["./node_modules/dataforged/dist/types/index.ts"]
     },
 
     // Best practices
