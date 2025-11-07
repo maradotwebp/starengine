@@ -1,5 +1,5 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, MessageFlags } from "discord.js";
-import { starforged } from 'dataforged';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, MessageFlags, TextDisplayBuilder, SectionBuilder, ThumbnailBuilder } from "discord.js";
+import { starforged, type IOracleCategory } from 'dataforged';
 import { findOracleById, findCategoryById, rollOnOracle, rollOnCategory, collectOracles, collectCategories } from '../utils/oracle.js';
 
 const oracles = collectOracles(starforged["Oracle Categories"]);
@@ -133,7 +133,7 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
   }
   
   // Format the response
-  let response = `# 🔮 ${category.Name}\n`;
+  let response = `# 🔮 ${category.Display.Title}\n`;
   
   for (const { oracle, roll, result, nestedRolls } of results) {
     response += `**${oracle.Name}**: ${result.Result}\n`;
@@ -153,7 +153,32 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
       }
     }
   }
-  
-  await interaction.reply(response);
+
+  const content = new TextDisplayBuilder().setContent(response);
+  const iconHrefs = getIconHrefs(category);
+
+  if (iconHrefs.length > 0) {
+    const section = new SectionBuilder().addTextDisplayComponents(content);
+    const randomIconHref = iconHrefs[Math.floor(Math.random() * iconHrefs.length)]!;
+    section.setThumbnailAccessory(
+      new ThumbnailBuilder().setURL(randomIconHref).setDescription(category.Display.Title)
+    );
+    await interaction.reply({
+      components: [section],
+      flags: MessageFlags.IsComponentsV2
+    });
+  } else {
+    await interaction.reply({
+      components: [content],
+      flags: MessageFlags.IsComponentsV2
+    });
+  }
+}
+
+function getIconHrefs(category: IOracleCategory): string[] {
+  return [
+    ...(category.Display.Images?.map(image => image.replace("../../img/raster/", "https://raw.githubusercontent.com/rsek/dataforged/refs/heads/main/img/raster/")) ?? []),
+    category.Display.Icon?.replace("../../img/vector/", "https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/Oracles/").replace(".svg", ".png"),
+  ].filter(href => href !== undefined);
 }
 
