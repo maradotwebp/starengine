@@ -16,7 +16,6 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: ChatInputCommandInteraction) {
   const oracleId = interaction.options.getString('name', true);
 
-  console.log(oracleId);
   // Find the oracle by ID
   const oracle = findOracleById(starforged["Oracle Categories"], oracleId);
   
@@ -63,19 +62,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.reply(response);
 }
 
+const oracles = collectOracles(starforged["Oracle Categories"]);
+
 export async function autocomplete(interaction: AutocompleteInteraction) {
   const focusedValue = interaction.options.getFocused();
   
-  // Collect all oracle names with their IDs
-  const oracles = collectOracles(starforged["Oracle Categories"]);
-  
-  // Filter and limit results
-  const filtered = oracles
-    .filter(({ name }) => name.toLowerCase().includes(focusedValue.toLowerCase()))
-    .slice(0, 25);
-  
   await interaction.respond(
-    filtered.map(({ name, id }) => ({ name, value: id }))
+    oracles
+      .map(({ name, path, id }) => ({ name: `${path.join('／')}／${name}`, value: id }))
+      .filter(({ name }) => name.toLowerCase().includes(focusedValue.toLowerCase()))
+      .slice(0, 25)
   );
 }
 

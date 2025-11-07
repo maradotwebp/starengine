@@ -79,24 +79,24 @@ export function rollOnOracle(oracle: IOracle, categories: IOracleCategory[]): { 
  * const oracles = collectOracles(starforged["Oracle Categories"]);
  * console.log(oracles);
  */
-export function collectOracles(categories: IOracleCategory[]): Array<{ name: string; id: string }> {
-  const oracles: Array<{ name: string; id: string }> = [];
+export function collectOracles(categories: IOracleCategory[], path: string[] = []): Array<{ name: string; path: string[]; id: string }> {
+  const oracles: Array<{ name: string; path: string[]; id: string }> = [];
   
   for (const category of categories) {
     if (category.Oracles) {
       for (const oracle of category.Oracles) {
         if (oracle.Name && oracle.Table && oracle.$id) {
-          oracles.push({ name: oracle.Name, id: oracle.$id });
+          oracles.push({ name: oracle.Name, path: [...path, category.Name], id: oracle.$id });
           if (oracle.Aliases) {
             for (const alias of oracle.Aliases) {
-              oracles.push({ name: alias, id: oracle.$id });
+              oracles.push({ name: alias, path: [...path, category.Name], id: oracle.$id });
             }
           }
         }
       }
     }
     if (category.Categories) {
-      oracles.push(...collectOracles(category.Categories));
+      oracles.push(...collectOracles(category.Categories, [...path, category.Name]));
     }
   }
   
