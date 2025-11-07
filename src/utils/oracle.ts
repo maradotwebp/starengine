@@ -73,6 +73,75 @@ export function rollOnOracle(oracle: IOracle, categories: IOracleCategory[]): { 
 }
 
 /**
+ * Find a category by its ID.
+ * 
+ * @example
+ * const category = findCategoryById(starforged["Oracle Categories"], "Starforged/Oracles/Characters");
+ * console.log(category);
+ */
+export function findCategoryById(categories: IOracleCategory[], id: string): IOracleCategory | null {
+  for (const category of categories) {
+    if (category.$id === id) {
+      return category;
+    }
+    if (category.Categories) {
+      const found = findCategoryById(category.Categories, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * Get all oracles recursively from a category.
+ */
+function getAllOraclesFromCategory(category: IOracleCategory): IOracle[] {
+  const oracles: IOracle[] = [];
+  
+  if (category.Oracles) {
+    for (const oracle of category.Oracles) {
+      if (oracle.Table && oracle.Table.length > 0) {
+        oracles.push(oracle);
+      }
+    }
+  }
+  
+  if (category.Categories) {
+    for (const subcategory of category.Categories) {
+      oracles.push(...getAllOraclesFromCategory(subcategory));
+    }
+  }
+  
+  return oracles;
+}
+
+/**
+ * Roll on all oracles in a category.
+ * 
+ * @example
+ * const results = rollOnCategory(category, starforged["Oracle Categories"]);
+ * console.log(results);
+ */
+export function rollOnCategory(category: IOracleCategory, categories: IOracleCategory[]): Array<{ oracle: IOracle; roll: number; result: IRow; nestedRolls?: Array<{ oracle: IOracle; roll: number; result: IRow }> }> {
+  const oracles = getAllOraclesFromCategory(category);
+  const results: Array<{ oracle: IOracle; roll: number; result: IRow; nestedRolls?: Array<{ oracle: IOracle; roll: number; result: IRow }> }> = [];
+  
+  for (const oracle of oracles) {
+    const rollResult = rollOnOracle(oracle, categories);
+    if (rollResult.result) {
+      results.push({
+        oracle,
+        roll: rollResult.roll,
+        result: rollResult.result,
+        nestedRolls: rollResult.nestedRolls
+      });
+    }
+  }
+  
+  return results;
+}
+
+/**
  * Collect all oracle names with their IDs for autocomplete.
  * 
  * @example
@@ -101,5 +170,34 @@ export function collectOracles(categories: IOracleCategory[], path: string[] = [
   }
   
   return oracles;
+}
+
+/**
+ * Collect all category names with their IDs for autocomplete.
+ * 
+ * @example
+ * const categories = collectCategories(starforged["Oracle Categories"]);
+ * console.log(categories);
+ */
+export function collectCategories(categories: IOracleCategory[], path: string[] = []): Array<{ name: string; path: string[]; id: string; hasOracles: boolean }> {
+  const result: Array<{ name: string; path: string[]; id: string; hasOracles: boolean }> = [];
+  
+  for (const category of categories) {
+    const hasOracles = getAllOraclesFromCategory(category).length > 0;
+    if (hasOracles && category.$id && category.Name) {
+      result.push({ 
+        name: category.Name, 
+        path: [...path], 
+        id: category.$id,
+        hasOracles: true
+      });
+    }
+    
+    if (category.Categories) {
+      result.push(...collectCategories(category.Categories, [...path, category.Name]));
+    }
+  }
+  
+  return result;
 }
 
