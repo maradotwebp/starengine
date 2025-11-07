@@ -1,4 +1,4 @@
-import { type IOracleCategory, starforged } from "dataforged";
+import { starforged } from "dataforged";
 import {
 	ActionRowBuilder,
 	type AutocompleteInteraction,
@@ -11,20 +11,17 @@ import {
 	TextDisplayBuilder,
 	ThumbnailBuilder,
 } from "discord.js";
-import { formatNestedOracleRoll, formatOracleRoll } from "../utils/format.js";
+import { formatOracleRoll, formatOracleRollAsList } from "../utils/format.js";
 import {
-	collectCategories,
-	collectOracles,
-	findCategoryById,
-	findOracleById,
+	collectRollableItems,
+	findRollableItemById,
 	findRowIndexByRoll,
-	useOracle,
-	useOracleAtRow,
-	useOracleCategory,
+	type RollableItem,
+	rollItem,
+	rollItemAtRow,
 } from "../utils/oracle.js";
 
-const oracles = collectOracles(starforged["Oracle Categories"]);
-const categories = collectCategories(starforged["Oracle Categories"]);
+const rollableItems = collectRollableItems(starforged["Oracle Categories"]);
 
 export const data = new SlashCommandBuilder()
 	.setName("oracle")
@@ -38,97 +35,93 @@ export const data = new SlashCommandBuilder()
 	);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-	const value = interaction.options.getString("table", true);
+	const itemId = interaction.options.getString("table", true);
+	const item = findRollableItemById(starforged["Oracle Categories"], itemId);
 
-	const [type, id] = value.split(":");
-
-	if (!id) {
-		throw new Error(`Could not find an oracle table or category with ID "${id}".`);
+	if (!item) {
+		throw new Error(`Could not find a rollable item with ID "${itemId}".`);
 	}
 
-	switch (type) {
-		case "oracle":
-			return await handleOracleRoll(interaction, id);
-		case "category":
-			return await handleCategoryRoll(interaction, id);
-		default:
-			throw new Error(`Invalid oracle type: "${type}".`);
-	}
+	await handleRoll(interaction, item);
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
 	const focusedValue = interaction.options.getFocused();
 
-	const categoryOptions = categories.map(({ name, path, id }) => ({
-		name: `${path.join("／")}${path.length > 0 ? "／" : ""}${name}`,
-		value: id,
-		type: "category" as const,
-	}));
-
-	const oracleOptions = oracles.map(({ name, path, id }) => ({
-		name: `${path.join("／")}／${name}`,
-		value: id,
-		type: "oracle" as const,
-	}));
-
-	const allOptions = [...categoryOptions, ...oracleOptions]
+	const allOptions = rollableItems
+		.map(({ name, path, id }) => ({
+			name: `${path.join("／")}${path.length > 0 ? "／" : ""}${name}`,
+			value: id,
+		}))
 		.filter(({ name }) =>
 			name.toLowerCase().includes(focusedValue.toLowerCase()),
 		)
-		.slice(0, 25)
-		.map(({ name, value, type }) => ({ name, value: `${type}:${value}` }));
+		.slice(0, 25);
 
 	await interaction.respond(allOptions);
 }
 
-export async function getOracleRollResponse(
-	oracleId: string,
+export async function getRollResponse(
+	itemId: string,
 	rowIndex?: number,
 ): Promise<{ content: string; components: ActionRowBuilder<ButtonBuilder>[] }> {
-	const oracle = findOracleById(starforged["Oracle Categories"], oracleId);
-
-	if (!oracle) {
-		throw new Error("Oracle not found");
+	const item = findRollableItemById(starforged["Oracle Categories"], itemId);
+	if (!item) {
+		throw new Error("Rollable item not found");
 	}
 
-	const result = rowIndex !== undefined
-		? useOracleAtRow(oracle, rowIndex, starforged["Oracle Categories"])
-		: useOracle(oracle, starforged["Oracle Categories"]);
+	// Check if it has a table (can be rolled with row index)
+	const hasTable = "Table" in item && item.Table && item.Table.length > 0;
+
+	if (!hasTable && rowIndex !== undefined) {
+		throw new Error("Cannot use row index on an item without a table");
+	}
+
+	const result =
+		rowIndex !== undefined
+			? rollItemAtRow(item, rowIndex, starforged["Oracle Categories"])
+			: rollItem(item, starforged["Oracle Categories"]);
+
+	// If result is an array (category roll), we can't use interactive buttons
+	if (Array.isArray(result)) {
+		throw new Error("Cannot get interactive response for category rolls");
+	}
+
 	const response = formatOracleRoll(result);
 
 	// Determine current row index
-	const currentRowIndex = rowIndex !== undefined
-		? rowIndex
-		: findRowIndexByRoll(oracle, result.roll);
+	const currentRowIndex =
+		rowIndex !== undefined ? rowIndex : findRowIndexByRoll(item, result.roll);
 
 	// Create buttons
 	const addButton = new ButtonBuilder()
-		.setCustomId(`oracle_add:${oracleId}`)
+		.setCustomId(`oracle_add:${itemId}`)
 		.setEmoji("➕")
 		.setStyle(ButtonStyle.Primary);
 
 	const nudgeUpButton = new ButtonBuilder()
-		.setCustomId(`oracle_nudge:${oracleId}:${currentRowIndex - 1}`)
+		.setCustomId(`oracle_nudge:${itemId}:${currentRowIndex - 1}`)
 		.setEmoji("⬆️")
 		.setStyle(ButtonStyle.Secondary)
 		.setDisabled(currentRowIndex === 0);
 
+	const tableLength = "Table" in item && item.Table ? item.Table.length : 0;
 	const nudgeDownButton = new ButtonBuilder()
-		.setCustomId(`oracle_nudge:${oracleId}:${currentRowIndex + 1}`)
+		.setCustomId(`oracle_nudge:${itemId}:${currentRowIndex + 1}`)
 		.setEmoji("⬇️")
 		.setStyle(ButtonStyle.Secondary)
-		.setDisabled(currentRowIndex === (oracle.Table?.length ?? 0) - 1);
+		.setDisabled(currentRowIndex === tableLength - 1);
 
 	const rerollButton = new ButtonBuilder()
-		.setCustomId(`oracle_reroll:${oracleId}`)
+		.setCustomId(`oracle_reroll:${itemId}`)
 		.setEmoji("🔄")
 		.setStyle(ButtonStyle.Secondary);
 
 	const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    addButton,
+		addButton,
 		nudgeUpButton,
 		nudgeDownButton,
-    rerollButton,
+		rerollButton,
 	);
 
 	return {
@@ -137,55 +130,44 @@ export async function getOracleRollResponse(
 	};
 }
 
-async function handleOracleRoll(
+async function handleRoll(
 	interaction: ChatInputCommandInteraction,
-	id: string,
+	item: RollableItem,
 ) {
-	const { content, components } = await getOracleRollResponse(id);
-	await interaction.reply({
-		content,
-		components,
-	});
-}
+	// Check if it has a table
+	const hasTable = "Table" in item && item.Table && item.Table.length > 0;
 
-async function handleCategoryRoll(
-	interaction: ChatInputCommandInteraction,
-	id: string,
-) {
-	const category = findCategoryById(starforged["Oracle Categories"], id);
-
-	if (!category) {
+	// If it has a table, use interactive response
+	if (hasTable) {
+		const { content, components } = await getRollResponse(item.$id);
 		await interaction.reply({
-			content: `❌ Category not found`,
-			flags: MessageFlags.Ephemeral,
+			content,
+			components,
 		});
 		return;
 	}
 
-	const results = useOracleCategory(category, starforged["Oracle Categories"]);
+	// Otherwise, roll all sub-oracles and display results
+	const results = rollItem(item, starforged["Oracle Categories"]);
 
-	if (results.length === 0) {
-		await interaction.reply({
-			content: `❌ Category "${category.Display.Title}" does not contain any rollable oracles.`,
-			flags: MessageFlags.Ephemeral,
-		});
-		return;
+	if (!Array.isArray(results) || results.length === 0) {
+		throw new Error(`"${item.Display.Title}" does not contain any rollable oracles.`);
 	}
 
 	// Format the response
 	let response = "";
 	for (const result of results) {
-		response += formatNestedOracleRoll(result, 0);
+		response += formatOracleRollAsList(result, 0);
 		if (result.nestedRolls) {
 			for (const nested of result.nestedRolls) {
-				response += formatNestedOracleRoll(nested, 1);
+				response += formatOracleRollAsList(nested, 1);
 			}
 		}
 	}
-	response += `-# ◇ ${category.Display.Title}\n`;
+	response += `-# ◇ ${item.Display.Title}\n`;
 
 	const content = new TextDisplayBuilder().setContent(response);
-	const iconHrefs = getIconHrefs(category);
+	const iconHrefs = getIconHrefs(item);
 
 	// Add a thumbnail if available
 	if (iconHrefs.length > 0) {
@@ -196,7 +178,7 @@ async function handleCategoryRoll(
 		section.setThumbnailAccessory(
 			new ThumbnailBuilder()
 				.setURL(randomIconHref)
-				.setDescription(category.Display.Title),
+				.setDescription(item.Display.Title),
 		);
 		await interaction.reply({
 			components: [section],
@@ -210,15 +192,15 @@ async function handleCategoryRoll(
 	}
 }
 
-function getIconHrefs(category: IOracleCategory): string[] {
+function getIconHrefs(item: RollableItem): string[] {
 	return [
-		...(category.Display.Images?.map((image) =>
+		...(item.Display.Images?.map((image) =>
 			image.replace(
 				"../../img/raster/",
 				"https://raw.githubusercontent.com/rsek/dataforged/refs/heads/main/img/raster/",
 			),
 		) ?? []),
-		category.Display.Icon?.replace(
+		item.Display.Icon?.replace(
 			"../../img/vector/",
 			"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/Oracles/",
 		).replace(".svg", ".png"),

@@ -26,7 +26,10 @@ const __dirname = dirname(__filename);
 client.commands = new Collection<string, SlashCommand>();
 
 // Collection to store button interactions
-client.buttonInteractions = new Collection<string | ((customId: string) => boolean), ButtonInteractionHandler>();
+client.buttonInteractions = new Collection<
+	string | ((customId: string) => boolean),
+	ButtonInteractionHandler
+>();
 
 // Load commands from the commands directory
 async function loadCommands() {
@@ -77,7 +80,7 @@ await loadButtonInteractions();
 function getErrorMessage(error: unknown) {
 	return {
 		content: `❌ Error: \`${error instanceof Error ? error.message : "Unknown error occurred"}\``,
-		flags: 'Ephemeral' as const,
+		flags: "Ephemeral" as const,
 	};
 }
 

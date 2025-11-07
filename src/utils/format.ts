@@ -1,23 +1,23 @@
-import type { UseOracleResult } from "./oracle";
+import type { RollResult } from "./oracle";
 
 /**
- * Format a response for an oracle roll as shown to the client.
+ * Format a response for an oracle roll to be shown to the client.
  */
 export function formatOracleRoll({
-	oracle,
+	item,
 	roll,
 	result,
 	nestedRolls,
-}: UseOracleResult): string {
+}: RollResult): string {
 	let response = `## 🔮 ${sanitizeResult(result.Result)}\n`;
 	if (result.Summary) {
 		response += `${result.Summary}\n`;
 	}
-	response += `-# \`→ ${roll}\` ◇ ${oracle.Display.Title}\n`;
+	response += `-# \`→ ${roll}\` ◇ ${item.Display.Title}\n`;
 
 	if (nestedRolls) {
 		for (const nested of nestedRolls) {
-			response += formatNestedOracleRoll(nested);
+			response += formatOracleRollAsList(nested);
 		}
 	}
 
@@ -25,18 +25,18 @@ export function formatOracleRoll({
 }
 
 /**
- * Format a response for a nested oracle roll as shown to the client.
+ * Format a response for a oracle roll as a list to be shown to the client.
  */
-export function formatNestedOracleRoll(
-	{ oracle, roll, result }: UseOracleResult,
+export function formatOracleRollAsList(
+	{ item, roll, result }: RollResult,
 	indentLevel: number = 0,
 ): string {
 	const indent = "  ".repeat(indentLevel);
-	let response = `${indent}- **${oracle.Name}**: ${sanitizeResult(result.Result)}\n`;
+	let response = `${indent}- **${item.Name}**: ${sanitizeResult(result.Result)}\n`;
 	if (result.Summary) {
 		response += `${indent}  -# ${result.Summary}\n`;
 	}
-	response += `${indent}  -# \`→ ${roll}\` ◇ ${oracle.Display.Title}\n`;
+	response += `${indent}  -# \`→ ${roll}\` ◇ ${item.Display.Title}\n`;
 	return response;
 }
 
