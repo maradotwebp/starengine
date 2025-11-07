@@ -1,10 +1,10 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction } from "discord.js";
 import { starforged } from 'dataforged';
-import { findOracleByName, rollOnOracle, collectOracleNames } from '../utils/oracle.js';
+import { findOracleById, rollOnOracle, collectOracles } from '../utils/oracle.js';
 
 export const data = new SlashCommandBuilder()
   .setName('oracle')
-  .setDescription('Roll on an oracle table from Starforged')
+  .setDescription('Roll on an oracle table.')
   .addStringOption(option =>
     option
       .setName('name')
@@ -14,14 +14,15 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const name = interaction.options.getString('name', true);
-  
-  // Find the oracle
-  const oracle = findOracleByName(starforged["Oracle Categories"], name);
+  const oracleId = interaction.options.getString('name', true);
+
+  console.log(oracleId);
+  // Find the oracle by ID
+  const oracle = findOracleById(starforged["Oracle Categories"], oracleId);
   
   if (!oracle) {
     await interaction.reply({ 
-      content: `❌ Could not find an oracle table named "${name}". Make sure you're using the exact name.`,
+      content: `❌ Could not find an oracle table with ID "${oracleId}".`,
       ephemeral: true 
     });
     return;
@@ -65,17 +66,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 export async function autocomplete(interaction: AutocompleteInteraction) {
   const focusedValue = interaction.options.getFocused();
   
-  // Collect all oracle names
-  const oracleNames: string[] = [];
-  collectOracleNames(starforged["Oracle Categories"], oracleNames);
+  // Collect all oracle names with their IDs
+  const oracles = collectOracles(starforged["Oracle Categories"]);
   
   // Filter and limit results
-  const filtered = oracleNames
-    .filter(name => name.toLowerCase().includes(focusedValue.toLowerCase()))
+  const filtered = oracles
+    .filter(({ name }) => name.toLowerCase().includes(focusedValue.toLowerCase()))
     .slice(0, 25);
   
   await interaction.respond(
-    filtered.map(name => ({ name, value: name }))
+    filtered.map(({ name, id }) => ({ name, value: id }))
   );
 }
 

@@ -1,39 +1,12 @@
 import type { IOracle, IOracleCategory, IRow } from 'dataforged';
 
-// Helper function to recursively search for an oracle by name
-export function findOracleByName(categories: IOracleCategory[], name: string): IOracle | null {
-  const searchName = name.toLowerCase().trim();
-  
-  for (const category of categories) {
-    // Check if this category has oracles
-    if (category.Oracles) {
-      for (const oracle of category.Oracles) {
-        // Check if the oracle name matches
-        if (oracle.Name?.toLowerCase() === searchName) {
-          return oracle;
-        }
-        // Check aliases if they exist
-        if (oracle.Aliases) {
-          for (const alias of oracle.Aliases) {
-            if (alias.toLowerCase() === searchName) {
-              return oracle;
-            }
-          }
-        }
-      }
-    }
-    
-    // Recursively search subcategories
-    if (category.Categories) {
-      const found = findOracleByName(category.Categories, name);
-      if (found) return found;
-    }
-  }
-  
-  return null;
-}
-
-// Helper function to find an oracle by ID
+/**
+ * Find an oracle by its ID.
+ * 
+ * @example
+ * const oracle = findOracleById(starforged["Oracle Categories"], "Starforged/Oracles/Characters/Revealed_Aspect");
+ * console.log(oracle);
+ */
 export function findOracleById(categories: IOracleCategory[], id: string): IOracle | null {
   for (const category of categories) {
     if (category.Oracles) {
@@ -51,7 +24,13 @@ export function findOracleById(categories: IOracleCategory[], id: string): IOrac
   return null;
 }
 
-// Helper function to roll on an oracle table
+/**
+ * Roll on an oracle table.
+ * 
+ * @example
+ * const { roll, result, nestedRolls, error } = rollOnOracle(oracle, starforged["Oracle Categories"]);
+ * console.log(roll, result, nestedRolls, error);
+ */
 export function rollOnOracle(oracle: IOracle, categories: IOracleCategory[]): { roll: number; result: IRow | null; nestedRolls?: Array<{ oracle: IOracle; roll: number; result: IRow }>; error?: string } {
   if (!oracle.Table || oracle.Table.length === 0) {
     return { roll: 0, result: null, error: "This oracle doesn't have a rollable table." };
@@ -93,22 +72,34 @@ export function rollOnOracle(oracle: IOracle, categories: IOracleCategory[]): { 
   return { roll, result: null, error: "Could not find a matching result for the roll." };
 }
 
-// Helper function to collect all oracle names for autocomplete
-export function collectOracleNames(categories: IOracleCategory[], oracleNames: string[]): void {
+/**
+ * Collect all oracle names with their IDs for autocomplete.
+ * 
+ * @example
+ * const oracles = collectOracles(starforged["Oracle Categories"]);
+ * console.log(oracles);
+ */
+export function collectOracles(categories: IOracleCategory[]): Array<{ name: string; id: string }> {
+  const oracles: Array<{ name: string; id: string }> = [];
+  
   for (const category of categories) {
     if (category.Oracles) {
       for (const oracle of category.Oracles) {
-        if (oracle.Name && oracle.Table) {
-          oracleNames.push(oracle.Name);
+        if (oracle.Name && oracle.Table && oracle.$id) {
+          oracles.push({ name: oracle.Name, id: oracle.$id });
           if (oracle.Aliases) {
-            oracleNames.push(...oracle.Aliases);
+            for (const alias of oracle.Aliases) {
+              oracles.push({ name: alias, id: oracle.$id });
+            }
           }
         }
       }
     }
     if (category.Categories) {
-      collectOracleNames(category.Categories, oracleNames);
+      oracles.push(...collectOracles(category.Categories));
     }
   }
+  
+  return oracles;
 }
 

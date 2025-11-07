@@ -80,28 +80,29 @@ client.once(Events.ClientReady, async c => {
   const rest = new REST().setToken(process.env.DISCORD_TOKEN!);
   
   try {
-    console.log('Started refreshing application (/) commands.');
+    console.log('Started refreshing (/) commands.');
     
     // Get all command data
     const commandsData = Array.from(client.commands.values()).map(command => command.data.toJSON());
     
     // Register commands globally (this can take up to an hour to propagate)
+    /*
     await rest.put(
       Routes.applicationCommands(c.user.id),
       { body: commandsData }
     );
+    console.log('Successfully reloaded application (/) commands.');
+    */
 
     await rest.put(
       Routes.applicationGuildCommands(c.user.id, '1436123427365851187'),
       { body: commandsData }
     );
-    
-    console.log('Successfully reloaded application (/) commands.');
-    console.log('Successfully reloaded application (/) guild commands.');
+    console.log('Successfully reloaded application guild (/) commands.');
   } catch (error) {
     console.error(error);
   }
 });
 
-// login with the token from .env.local
+// login with the token from .env
 client.login(process.env.DISCORD_TOKEN);
