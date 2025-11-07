@@ -39,23 +39,20 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   }
   
   // Format the response
-  let response = `🎲 **${oracle.Name}**\n`;
-  response += `Roll: **${roll}**\n`;
-  response += `Result: **${result.Result}**\n`;
-  
+  let response =`# 🔮 ${result.Result}\n`;
   if (result.Summary) {
-    response += `\n${result.Summary}`;
+    response += `${result.Summary}\n`;
   }
+  response += `-# \`→ ${roll}\` ◇ ${oracle.Display.Title}`;
   
   // Add nested oracle rolls if any
   if (nestedRolls) {
     for (const nested of nestedRolls) {
-      response += `\n\n🎲 **${nested.oracle.Name}**\n`;
-      response += `Roll: **${nested.roll}**\n`;
-      response += `Result: **${nested.result.Result}**\n`;
+      response += `# 🔮 ${nested.result.Result}\n`;
       if (nested.result.Summary) {
-        response += `\n${nested.result.Summary}`;
+        response += `${nested.result.Summary}\n`;
       }
+      response += `-# \`→ ${nested.roll}\` ◇ ${nested.oracle.Display.Title}`;
     }
   }
   
