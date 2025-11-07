@@ -1,10 +1,29 @@
 import type { IOracle, IOracleCategory, IRow } from "dataforged";
 
-interface CollectedOracle {
+// Constants
+const DICE_MIN = 1;
+const DICE_MAX = 100;
+
+// Types
+export interface CollectedItem {
 	name: string;
 	path: string[];
 	id: string;
 }
+
+export type CollectedOracle = CollectedItem;
+export type CollectedCategory = CollectedItem;
+
+export interface UseOracleResult {
+	oracle: IOracle;
+	roll: number;
+	result: IRow;
+	nestedRolls?: Array<UseOracleResult>;
+}
+
+// ============================================================================
+// Public API - Collection Functions
+// ============================================================================
 
 /**
  * Collect all oracle names with their IDs for autocomplete.
@@ -16,47 +35,35 @@ interface CollectedOracle {
 export function collectOracles(
 	categories: IOracleCategory[],
 	path: string[] = [],
-): Array<CollectedOracle> {
-	const oracles: Array<CollectedOracle> = [];
+): CollectedOracle[] {
+	const oracles: CollectedOracle[] = [];
 
 	for (const category of categories) {
+		const currentPath = [...path, category.Display.Title];
+
 		if (category.Oracles) {
 			for (const oracle of category.Oracles) {
 				if (oracle.Table) {
-					oracles.push({
-						name: oracle.Display.Title,
-						path: [...path, category.Display.Title],
-						id: oracle.$id,
-					});
-					if (oracle.Aliases) {
-						for (const alias of oracle.Aliases) {
-							oracles.push({
-								name: alias,
-								path: [...path, category.Display.Title],
-								id: oracle.$id,
-							});
-						}
-					}
+					oracles.push(...processOracle(oracle, currentPath));
+				}
+
+				if (oracle.Oracles) {
+					oracles.push(
+						...processOracleList(oracle.Oracles, [
+							...currentPath,
+							oracle.Display.Title,
+						]),
+					);
 				}
 			}
 		}
+
 		if (category.Categories) {
-			oracles.push(
-				...collectOracles(category.Categories, [
-					...path,
-					category.Display.Title,
-				]),
-			);
+			oracles.push(...collectOracles(category.Categories, currentPath));
 		}
 	}
 
 	return oracles;
-}
-
-export interface CollectedCategory {
-	name: string;
-	path: string[];
-	id: string;
 }
 
 /**
@@ -69,11 +76,11 @@ export interface CollectedCategory {
 export function collectCategories(
 	categories: IOracleCategory[],
 	path: string[] = [],
-): Array<CollectedCategory> {
-	const result: Array<CollectedCategory> = [];
+): CollectedCategory[] {
+	const result: CollectedCategory[] = [];
 
 	for (const category of categories) {
-		const hasOracles = getAllOraclesFromCategory(category).length > 0;
+		const hasOracles = getRollableOraclesFromCategory(category).length > 0;
 		if (hasOracles) {
 			result.push({
 				name: category.Display.Title,
@@ -95,6 +102,10 @@ export function collectCategories(
 	return result;
 }
 
+// ============================================================================
+// Public API - Search Functions
+// ============================================================================
+
 /**
  * Find an oracle by its ID.
  *
@@ -112,131 +123,20 @@ export function findOracleById(
 				if (oracle.$id === id) {
 					return oracle;
 				}
+
+				if (oracle.Oracles) {
+					const found = findInOracleList(oracle.Oracles, id);
+					if (found) return found;
+				}
 			}
 		}
+
 		if (category.Categories) {
 			const found = findOracleById(category.Categories, id);
 			if (found) return found;
 		}
 	}
 	return null;
-}
-
-export interface UseOracleResult {
-	oracle: IOracle;
-	roll: number;
-	result: IRow;
-	nestedRolls?: Array<UseOracleResult>;
-}
-
-/**
- * Roll on an oracle table.
- *
- * @example
- * const { roll, result, nestedRolls, error } = rollOnOracle(oracle, starforged["Oracle Categories"]);
- * console.log(roll, result, nestedRolls, error);
- */
-export function useOracle(
-	oracle: IOracle,
-	categories: IOracleCategory[],
-): UseOracleResult {
-	if (!oracle.Table || oracle.Table.length === 0) {
-		throw new Error("This oracle doesn't have a rollable table.");
-	}
-
-	// Roll a d100
-	const roll = Math.floor(Math.random() * 100) + 1;
-
-	// Find the matching row
-	for (const row of oracle.Table) {
-		const floor = row.Floor ?? 1;
-		const ceiling = row.Ceiling ?? 100;
-
-		if (roll >= floor && roll <= ceiling) {
-			const nestedRolls: Array<UseOracleResult> = [];
-			if (row["Oracle rolls"]) {
-				for (const oracleId of row["Oracle rolls"]) {
-					const oracle = findOracleById(categories, oracleId);
-					if (oracle) {
-						const nestedResult = useOracle(oracle, categories);
-						nestedRolls.push(nestedResult);
-					}
-				}
-			}
-
-			return {
-				oracle,
-				roll,
-				result: row,
-				nestedRolls: nestedRolls.length > 0 ? nestedRolls : undefined,
-			};
-		}
-	}
-
-	throw new Error("Could not find a matching result for the roll.");
-}
-
-/**
- * Get the result from a specific row index in an oracle table.
- *
- * @example
- * const result = useOracleAtRow(oracle, 5, starforged["Oracle Categories"]);
- * console.log(result);
- */
-export function useOracleAtRow(
-	oracle: IOracle,
-	rowIndex: number,
-	categories: IOracleCategory[],
-): UseOracleResult {
-	if (!oracle.Table || oracle.Table.length === 0) {
-		throw new Error("This oracle doesn't have a rollable table.");
-	}
-
-	if (rowIndex < 0 || rowIndex >= oracle.Table.length) {
-		throw new Error("Row index out of bounds.");
-	}
-
-	const row = oracle.Table[rowIndex] as IRow;
-	const roll = row.Floor ?? 1;
-
-	const nestedRolls: Array<UseOracleResult> = [];
-	if (row["Oracle rolls"]) {
-		for (const oracleId of row["Oracle rolls"]) {
-			const nestedOracle = findOracleById(categories, oracleId);
-			if (nestedOracle) {
-				const nestedResult = useOracle(nestedOracle, categories);
-				nestedRolls.push(nestedResult);
-			}
-		}
-	}
-
-	return {
-		oracle,
-		roll,
-		result: row,
-		nestedRolls: nestedRolls.length > 0 ? nestedRolls : undefined,
-	};
-}
-
-/**
- * Find the row index for a given roll value.
- */
-export function findRowIndexByRoll(oracle: IOracle, roll: number): number {
-	if (!oracle.Table || oracle.Table.length === 0) {
-		throw new Error("This oracle doesn't have a rollable table.");
-	}
-
-	for (let i = 0; i < oracle.Table.length; i++) {
-		const row = oracle.Table[i] as IRow;
-		const floor = row.Floor ?? 1;
-		const ceiling = row.Ceiling ?? 100;
-
-		if (roll >= floor && roll <= ceiling) {
-			return i;
-		}
-	}
-
-	throw new Error("Could not find a matching row for the roll.");
 }
 
 /**
@@ -254,6 +154,7 @@ export function findCategoryById(
 		if (category.$id === id) {
 			return category;
 		}
+
 		if (category.Categories) {
 			const found = findCategoryById(category.Categories, id);
 			if (found) return found;
@@ -262,27 +163,137 @@ export function findCategoryById(
 	return null;
 }
 
+// ============================================================================
+// Public API - Oracle Rolling Functions
+// ============================================================================
+
 /**
- * Get all oracles recursively from a category.
+ * Gets and validates that an oracle has a rollable table.
+ * @throws {Error} If the oracle doesn't have a rollable table.
  */
-function getAllOraclesFromCategory(category: IOracleCategory): IOracle[] {
-	const oracles: IOracle[] = [];
+function getValidatedTable(oracle: IOracle): IRow[] {
+	if (!oracle.Table || oracle.Table.length === 0) {
+		throw new Error("This oracle doesn't have a rollable table.");
+	}
+	return oracle.Table;
+}
 
-	if (category.Oracles) {
-		for (const oracle of category.Oracles) {
-			if (oracle.Table && oracle.Table.length > 0) {
-				oracles.push(oracle);
-			}
+/**
+ * Generates a random dice roll for d100.
+ */
+function rollDice(): number {
+	return Math.floor(Math.random() * DICE_MAX) + DICE_MIN;
+}
+
+/**
+ * Finds the matching row for a given roll value.
+ */
+function findRowByRoll(table: IRow[], roll: number): IRow {
+	for (const row of table) {
+		const floor = row.Floor ?? DICE_MIN;
+		const ceiling = row.Ceiling ?? DICE_MAX;
+
+		if (roll >= floor && roll <= ceiling) {
+			return row;
 		}
 	}
 
-	if (category.Categories) {
-		for (const subcategory of category.Categories) {
-			oracles.push(...getAllOraclesFromCategory(subcategory));
+	throw new Error("Could not find a matching result for the roll.");
+}
+
+/**
+ * Processes nested oracle rolls from a row.
+ */
+function processNestedRolls(
+	row: IRow,
+	categories: IOracleCategory[],
+): UseOracleResult[] | undefined {
+	if (!row["Oracle rolls"]) {
+		return undefined;
+	}
+
+	const nestedRolls: UseOracleResult[] = [];
+	for (const oracleId of row["Oracle rolls"]) {
+		const nestedOracle = findOracleById(categories, oracleId);
+		if (nestedOracle) {
+			nestedRolls.push(useOracle(nestedOracle, categories));
 		}
 	}
 
-	return oracles;
+	return nestedRolls.length > 0 ? nestedRolls : undefined;
+}
+
+/**
+ * Roll on an oracle table.
+ *
+ * @example
+ * const { roll, result, nestedRolls } = useOracle(oracle, starforged["Oracle Categories"]);
+ * console.log(roll, result, nestedRolls);
+ */
+export function useOracle(
+	oracle: IOracle,
+	categories: IOracleCategory[],
+): UseOracleResult {
+	const table = getValidatedTable(oracle);
+	const roll = rollDice();
+	const result = findRowByRoll(table, roll);
+	const nestedRolls = processNestedRolls(result, categories);
+
+	return {
+		oracle,
+		roll,
+		result,
+		nestedRolls,
+	};
+}
+
+/**
+ * Get the result from a specific row index in an oracle table.
+ *
+ * @example
+ * const result = useOracleAtRow(oracle, 5, starforged["Oracle Categories"]);
+ * console.log(result);
+ */
+export function useOracleAtRow(
+	oracle: IOracle,
+	rowIndex: number,
+	categories: IOracleCategory[],
+): UseOracleResult {
+	const table = getValidatedTable(oracle);
+
+	if (rowIndex < 0 || rowIndex >= table.length) {
+		throw new Error("Row index out of bounds.");
+	}
+
+	const row = table[rowIndex] as IRow;
+	const roll = row.Floor ?? DICE_MIN;
+	const nestedRolls = processNestedRolls(row, categories);
+
+	return {
+		oracle,
+		roll,
+		result: row,
+		nestedRolls,
+	};
+}
+
+/**
+ * Find the row index for a given roll value.
+ */
+export function findRowIndexByRoll(oracle: IOracle, roll: number): number {
+	const table = getValidatedTable(oracle);
+
+	for (let i = 0; i < table.length; i++) {
+		const row = table[i] as IRow;
+		const floor = row.Floor ?? DICE_MIN;
+		const ceiling = row.Ceiling ?? DICE_MAX;
+
+		if (roll >= floor && roll <= ceiling) {
+			return i;
+		}
+	}
+
+	throw new Error("Could not find a matching row for the roll.");
 }
 
 /**
@@ -295,21 +306,130 @@ function getAllOraclesFromCategory(category: IOracleCategory): IOracle[] {
 export function useOracleCategory(
 	category: IOracleCategory,
 	categories: IOracleCategory[],
-): Array<UseOracleResult> {
-	const oracles = getAllOraclesFromCategory(category);
-	const results: Array<UseOracleResult> = [];
+): UseOracleResult[] {
+	const oracles = getRollableOraclesFromCategory(category);
+	const results: UseOracleResult[] = [];
 
 	for (const oracle of oracles) {
-		const rollResult = useOracle(oracle, categories);
-		if (rollResult.result) {
-			results.push({
-				oracle,
-				roll: rollResult.roll,
-				result: rollResult.result,
-				nestedRolls: rollResult.nestedRolls,
+		results.push(useOracle(oracle, categories));
+	}
+
+	return results;
+}
+
+// ============================================================================
+// Helper Functions - Oracle Processing
+// ============================================================================
+
+/**
+ * Creates collected items for an oracle including all its aliases.
+ */
+function processOracle(
+	oracle: IOracle,
+	path: string[],
+): CollectedOracle[] {
+	const items: CollectedOracle[] = [{
+		name: oracle.Display.Title,
+		path: [...path],
+		id: oracle.$id,
+	}];
+
+	if (oracle.Aliases) {
+		for (const alias of oracle.Aliases) {
+			items.push({
+				name: alias,
+				path: [...path],
+				id: oracle.$id,
 			});
 		}
 	}
 
-	return results;
+	return items;
+}
+
+/**
+ * Recursively processes oracles from a list, including sub-oracles.
+ */
+function processOracleList(
+	oracles: IOracle[],
+	path: string[],
+): CollectedOracle[] {
+	const result: CollectedOracle[] = [];
+
+	for (const oracle of oracles) {
+		if (oracle.Table) {
+			result.push(...processOracle(oracle, path));
+		}
+
+		if (oracle.Oracles) {
+			result.push(
+				...processOracleList(oracle.Oracles, [...path, oracle.Display.Title]),
+			);
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Recursively finds an oracle by ID in a list of oracles.
+ */
+function findInOracleList(oracles: IOracle[], id: string): IOracle | null {
+	for (const oracle of oracles) {
+		if (oracle.$id === id) {
+			return oracle;
+		}
+
+		if (oracle.Oracles) {
+			const found = findInOracleList(oracle.Oracles, id);
+			if (found) return found;
+		}
+	}
+	return null;
+}
+
+/**
+ * Recursively gets all rollable oracles from a list of oracles.
+ */
+function getRollableOraclesFromList(oracles: IOracle[]): IOracle[] {
+	const result: IOracle[] = [];
+
+	for (const oracle of oracles) {
+		if (oracle.Table && oracle.Table.length > 0) {
+			result.push(oracle);
+		}
+
+		if (oracle.Oracles) {
+			result.push(...getRollableOraclesFromList(oracle.Oracles));
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Recursively gets all rollable oracles from a category.
+ */
+function getRollableOraclesFromCategory(category: IOracleCategory): IOracle[] {
+	const oracles: IOracle[] = [];
+
+	if (category.Oracles) {
+		for (const oracle of category.Oracles) {
+			if (oracle.Table && oracle.Table.length > 0) {
+				oracles.push(oracle);
+			}
+
+			if (oracle.Oracles) {
+				oracles.push(...getRollableOraclesFromList(oracle.Oracles));
+			}
+		}
+	}
+
+	if (category.Categories) {
+		for (const subcategory of category.Categories) {
+			oracles.push(...getRollableOraclesFromCategory(subcategory));
+		}
+	}
+
+	return oracles;
 }
