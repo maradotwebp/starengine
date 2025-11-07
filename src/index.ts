@@ -11,7 +11,9 @@ import {
 	Routes,
 } from "discord.js";
 import type { ButtonInteractionHandler } from "./types/interaction";
+
 import "./types/discord.d.ts";
+import type { SlashCommand } from "./types/command.ts";
 
 // create a new Client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -21,10 +23,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Collection to store commands
-client.commands = new Collection();
+client.commands = new Collection<string, SlashCommand>();
 
 // Collection to store button interactions
-client.buttonInteractions = new Collection();
+client.buttonInteractions = new Collection<string | ((customId: string) => boolean), ButtonInteractionHandler>();
 
 // Load commands from the commands directory
 async function loadCommands() {
@@ -72,6 +74,13 @@ async function loadButtonInteractions() {
 await loadCommands();
 await loadButtonInteractions();
 
+function getErrorMessage(error: unknown) {
+	return {
+		content: `❌ Error: \`${error instanceof Error ? error.message : "Unknown error occurred"}\``,
+		flags: 'Ephemeral' as const,
+	};
+}
+
 // Handle interactions
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isChatInputCommand()) {
@@ -87,11 +96,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		try {
 			await command.execute(interaction);
 		} catch (error) {
-			console.error(`Error executing ${interaction.commandName}:`, error);
-			const errorMessage = {
-				content: "There was an error while executing this command!",
-				ephemeral: true,
-			};
+			console.error(`Error executing button interaction:`, error);
+			const errorMessage = getErrorMessage(error);
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp(errorMessage);
 			} else {
@@ -138,10 +144,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 			await handler.execute(interaction);
 		} catch (error) {
 			console.error(`Error executing button interaction:`, error);
-			const errorMessage = {
-				content: "There was an error while executing this interaction!",
-				ephemeral: true,
-			};
+			const errorMessage = getErrorMessage(error);
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp(errorMessage);
 			} else {

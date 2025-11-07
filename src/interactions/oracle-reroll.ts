@@ -7,18 +7,10 @@ export const handler: ButtonInteractionHandler = {
 	execute: async (interaction: ButtonInteraction) => {
 		const oracleId = interaction.customId.replace("oracle_reroll:", "");
 
-		try {
-			const { content, components } = await getOracleRollResponse(oracleId);
-			await interaction.update({
-				content,
-				components,
-			});
-		} catch (error) {
-			console.error(`Error handling oracle reroll:`, error);
-			await interaction.reply({
-				content: `❌ Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
-				ephemeral: true,
-			});
-		}
+		const { content, components } = await getOracleRollResponse(oracleId);
+		await interaction.update({
+			content,
+			components,
+		});
 	},
 };

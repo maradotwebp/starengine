@@ -43,11 +43,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 	const [type, id] = value.split(":");
 
 	if (!id) {
-		await interaction.reply({
-			content: `❌ Could not find an oracle table or category with ID "${id}".`,
-			flags: MessageFlags.Ephemeral,
-		});
-		return;
+		throw new Error(`Could not find an oracle table or category with ID "${id}".`);
 	}
 
 	switch (type) {
@@ -56,10 +52,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		case "category":
 			return await handleCategoryRoll(interaction, id);
 		default:
-			return await interaction.reply({
-				content: `❌ Could not find an oracle table or category with ID "${id}".`,
-				flags: MessageFlags.Ephemeral,
-			});
+			throw new Error(`Invalid oracle type: "${type}".`);
 	}
 }
 
@@ -148,20 +141,11 @@ async function handleOracleRoll(
 	interaction: ChatInputCommandInteraction,
 	id: string,
 ) {
-	try {
-		const { content, components } = await getOracleRollResponse(id);
-		await interaction.reply({
-			content,
-			components,
-		});
-	} catch (error) {
-		console.error(`Error handling oracle reroll:`, error);
-		await interaction.reply({
-			content: `❌ Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
-			flags: MessageFlags.Ephemeral,
-		});
-		return;
-	}
+	const { content, components } = await getOracleRollResponse(id);
+	await interaction.reply({
+		content,
+		components,
+	});
 }
 
 async function handleCategoryRoll(

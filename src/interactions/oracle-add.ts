@@ -7,25 +7,12 @@ export const handler: ButtonInteractionHandler = {
 	execute: async (interaction: ButtonInteraction) => {
 		const oracleId = interaction.customId.replace("oracle_add:", "");
 
-		try {
-			// Get the new roll result
-			const { content, components } = await getOracleRollResponse(oracleId);
-			
-			// Acknowledge the button click
-			await interaction.deferUpdate();
-			
-			// Send a new follow-up message with the new roll
-			await interaction.followUp({
-				content,
-				components,
-			});
-		} catch (error) {
-			console.error(`Error handling oracle add:`, error);
-			await interaction.reply({
-				content: `❌ Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
-				ephemeral: true,
-			});
-		}
+		const { content, components } = await getOracleRollResponse(oracleId);
+		await interaction.deferUpdate();
+		await interaction.followUp({
+			content,
+			components,
+		});
 	},
 };
 

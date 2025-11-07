@@ -9,22 +9,14 @@ export const handler: ButtonInteractionHandler = {
 		const oracleId = parts[1] as string;
 		const targetRowIndex = Number.parseInt(parts[2] as string, 10);
 
-		try {
-			const { content, components } = await getOracleRollResponse(
-				oracleId,
-				targetRowIndex,
-			);
-			await interaction.update({
-				content,
-				components,
-			});
-		} catch (error) {
-			console.error(`Error handling oracle nudge:`, error);
-			await interaction.reply({
-				content: `❌ Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
-				ephemeral: true,
-			});
-		}
+		const { content, components } = await getOracleRollResponse(
+			oracleId,
+			targetRowIndex,
+		);
+		await interaction.update({
+			content,
+			components,
+		});
 	},
 };
 
