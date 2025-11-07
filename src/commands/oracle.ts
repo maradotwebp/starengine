@@ -17,7 +17,9 @@ import {
 	collectOracles,
 	findCategoryById,
 	findOracleById,
+	findRowIndexByRoll,
 	useOracle,
+	useOracleAtRow,
 	useOracleCategory,
 } from "../utils/oracle.js";
 
@@ -88,6 +90,7 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
 
 export async function getOracleRollResponse(
 	oracleId: string,
+	rowIndex?: number,
 ): Promise<{ content: string; components: ActionRowBuilder<ButtonBuilder>[] }> {
 	const oracle = findOracleById(starforged["Oracle Categories"], oracleId);
 
@@ -95,15 +98,38 @@ export async function getOracleRollResponse(
 		throw new Error("Oracle not found");
 	}
 
-	const result = useOracle(oracle, starforged["Oracle Categories"]);
+	const result = rowIndex !== undefined
+		? useOracleAtRow(oracle, rowIndex, starforged["Oracle Categories"])
+		: useOracle(oracle, starforged["Oracle Categories"]);
 	const response = formatOracleRoll(result);
+
+	// Determine current row index
+	const currentRowIndex = rowIndex !== undefined
+		? rowIndex
+		: findRowIndexByRoll(oracle, result.roll);
+
+	// Create buttons
+	const nudgeUpButton = new ButtonBuilder()
+		.setCustomId(`oracle_nudge_up:${oracleId}:${currentRowIndex}`)
+		.setEmoji("⬆️")
+		.setStyle(ButtonStyle.Secondary)
+		.setDisabled(currentRowIndex === 0);
+
+  const nudgeDownButton = new ButtonBuilder()
+		.setCustomId(`oracle_nudge_down:${oracleId}:${currentRowIndex}`)
+		.setEmoji("⬇️")
+		.setStyle(ButtonStyle.Secondary)
+		.setDisabled(currentRowIndex === (oracle.Table?.length ?? 0) - 1);
 
 	const rerollButton = new ButtonBuilder()
 		.setCustomId(`oracle_reroll:${oracleId}`)
 		.setEmoji("🔄")
 		.setStyle(ButtonStyle.Secondary);
+
 	const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-		rerollButton,
+		nudgeUpButton,
+		nudgeDownButton,
+    rerollButton,
 	);
 
 	return {

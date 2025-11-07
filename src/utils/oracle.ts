@@ -177,6 +177,69 @@ export function useOracle(
 }
 
 /**
+ * Get the result from a specific row index in an oracle table.
+ *
+ * @example
+ * const result = useOracleAtRow(oracle, 5, starforged["Oracle Categories"]);
+ * console.log(result);
+ */
+export function useOracleAtRow(
+	oracle: IOracle,
+	rowIndex: number,
+	categories: IOracleCategory[],
+): UseOracleResult {
+	if (!oracle.Table || oracle.Table.length === 0) {
+		throw new Error("This oracle doesn't have a rollable table.");
+	}
+
+	if (rowIndex < 0 || rowIndex >= oracle.Table.length) {
+		throw new Error("Row index out of bounds.");
+	}
+
+	const row = oracle.Table[rowIndex] as IRow;
+	const roll = row.Floor ?? 1;
+
+	const nestedRolls: Array<UseOracleResult> = [];
+	if (row["Oracle rolls"]) {
+		for (const oracleId of row["Oracle rolls"]) {
+			const nestedOracle = findOracleById(categories, oracleId);
+			if (nestedOracle) {
+				const nestedResult = useOracle(nestedOracle, categories);
+				nestedRolls.push(nestedResult);
+			}
+		}
+	}
+
+	return {
+		oracle,
+		roll,
+		result: row,
+		nestedRolls: nestedRolls.length > 0 ? nestedRolls : undefined,
+	};
+}
+
+/**
+ * Find the row index for a given roll value.
+ */
+export function findRowIndexByRoll(oracle: IOracle, roll: number): number {
+	if (!oracle.Table || oracle.Table.length === 0) {
+		throw new Error("This oracle doesn't have a rollable table.");
+	}
+
+	for (let i = 0; i < oracle.Table.length; i++) {
+		const row = oracle.Table[i] as IRow;
+		const floor = row.Floor ?? 1;
+		const ceiling = row.Ceiling ?? 100;
+
+		if (roll >= floor && roll <= ceiling) {
+			return i;
+		}
+	}
+
+	throw new Error("Could not find a matching row for the roll.");
+}
+
+/**
  * Find a category by its ID.
  *
  * @example
