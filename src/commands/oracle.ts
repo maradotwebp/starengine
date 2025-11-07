@@ -109,6 +109,11 @@ export async function getOracleRollResponse(
 		: findRowIndexByRoll(oracle, result.roll);
 
 	// Create buttons
+	const addButton = new ButtonBuilder()
+		.setCustomId(`oracle_add:${oracleId}`)
+		.setEmoji("➕")
+		.setStyle(ButtonStyle.Primary);
+
 	const nudgeUpButton = new ButtonBuilder()
 		.setCustomId(`oracle_nudge_up:${oracleId}:${currentRowIndex}`)
 		.setEmoji("⬆️")
@@ -127,6 +132,7 @@ export async function getOracleRollResponse(
 		.setStyle(ButtonStyle.Secondary);
 
 	const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    addButton,
 		nudgeUpButton,
 		nudgeDownButton,
     rerollButton,
