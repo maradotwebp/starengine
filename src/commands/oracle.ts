@@ -115,13 +115,13 @@ export async function getOracleRollResponse(
 		.setStyle(ButtonStyle.Primary);
 
 	const nudgeUpButton = new ButtonBuilder()
-		.setCustomId(`oracle_nudge_up:${oracleId}:${currentRowIndex}`)
+		.setCustomId(`oracle_nudge:${oracleId}:${currentRowIndex - 1}`)
 		.setEmoji("⬆️")
 		.setStyle(ButtonStyle.Secondary)
 		.setDisabled(currentRowIndex === 0);
 
-  const nudgeDownButton = new ButtonBuilder()
-		.setCustomId(`oracle_nudge_down:${oracleId}:${currentRowIndex}`)
+	const nudgeDownButton = new ButtonBuilder()
+		.setCustomId(`oracle_nudge:${oracleId}:${currentRowIndex + 1}`)
 		.setEmoji("⬇️")
 		.setStyle(ButtonStyle.Secondary)
 		.setDisabled(currentRowIndex === (oracle.Table?.length ?? 0) - 1);
