@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, MessageFlags, TextDisplayBuilder, SectionBuilder, ThumbnailBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { starforged, type IOracleCategory, type IOracle, type IRow } from 'dataforged';
-import { findOracleById, findCategoryById, rollOnOracle, rollOnCategory, collectOracles, collectCategories } from '../utils/oracle.js';
+import { findOracleById, findCategoryById, useOracle, useOracleCategory, collectOracles, collectCategories } from '../utils/oracle.js';
 import { formatNestedOracleRoll, formatOracleRoll, sanitizeResult } from "../utils/format.js";
 
 const oracles = collectOracles(starforged["Oracle Categories"]);
@@ -76,13 +76,8 @@ export async function getOracleRollResponse(oracleId: string): Promise<{ content
     throw new Error("Oracle not found");
   }
 
-  const { roll, result, nestedRolls, error } = rollOnOracle(oracle, starforged["Oracle Categories"]);
-  
-  if (error || !result) {
-    throw new Error(error || "Unknown error occurred");
-  }
-  
-  const response = formatOracleRoll(oracle, roll, result, nestedRolls);
+  const result = useOracle(oracle, starforged["Oracle Categories"]);
+  const response = formatOracleRoll(result);
   
   const rerollButton = new ButtonBuilder()
     .setCustomId(`oracle_reroll:${oracleId}`)
@@ -125,7 +120,7 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
     return;
   }
 
-  const results = rollOnCategory(category, starforged["Oracle Categories"]);
+  const results = useOracleCategory(category, starforged["Oracle Categories"]);
   
   if (results.length === 0) {
     await interaction.reply({ 
@@ -137,11 +132,11 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
   
   // Format the response
   let response = '';
-  for (const { oracle, roll, result, nestedRolls } of results) {
-    response += formatNestedOracleRoll(oracle, roll, result, 0);
-    if (nestedRolls) {
-      for (const nested of nestedRolls) {
-        response += formatNestedOracleRoll(nested.oracle, nested.roll, nested.result, 1);
+  for (const result of results) {
+    response += formatNestedOracleRoll(result, 0);
+    if (result.nestedRolls) {
+      for (const nested of result.nestedRolls) {
+        response += formatNestedOracleRoll(nested, 1);
       }
     }
   }

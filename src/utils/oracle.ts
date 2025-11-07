@@ -1,5 +1,76 @@
 import type { IOracle, IOracleCategory, IRow } from 'dataforged';
 
+interface CollectedOracle {
+  name: string;
+  path: string[];
+  id: string;
+}
+
+/**
+ * Collect all oracle names with their IDs for autocomplete.
+ * 
+ * @example
+ * const oracles = collectOracles(starforged["Oracle Categories"]);
+ * console.log(oracles);
+ */
+export function collectOracles(categories: IOracleCategory[], path: string[] = []): Array<CollectedOracle> {
+  const oracles: Array<CollectedOracle> = [];
+  
+  for (const category of categories) {
+    if (category.Oracles) {
+      for (const oracle of category.Oracles) {
+        if (oracle.Table) {
+          oracles.push({ name: oracle.Display.Title, path: [...path, category.Display.Title], id: oracle.$id });
+          if (oracle.Aliases) {
+            for (const alias of oracle.Aliases) {
+              oracles.push({ name: alias, path: [...path, category.Display.Title], id: oracle.$id });
+            }
+          }
+        }
+      }
+    }
+    if (category.Categories) {
+      oracles.push(...collectOracles(category.Categories, [...path, category.Display.Title]));
+    }
+  }
+  
+  return oracles;
+}
+
+export interface CollectedCategory {
+  name: string;
+  path: string[];
+  id: string;
+}
+
+/**
+ * Collect all category names with their IDs for autocomplete.
+ * 
+ * @example
+ * const categories = collectCategories(starforged["Oracle Categories"]);
+ * console.log(categories);
+ */
+export function collectCategories(categories: IOracleCategory[], path: string[] = []): Array<CollectedCategory> {
+  const result: Array<CollectedCategory> = [];
+  
+  for (const category of categories) {
+    const hasOracles = getAllOraclesFromCategory(category).length > 0;
+    if (hasOracles) {
+      result.push({ 
+        name: category.Display.Title, 
+        path: [...path], 
+        id: category.$id
+      });
+    }
+    
+    if (category.Categories) {
+      result.push(...collectCategories(category.Categories, [...path, category.Display.Title]));
+    }
+  }
+  
+  return result;
+}
+
 /**
  * Find an oracle by its ID.
  * 
@@ -24,6 +95,13 @@ export function findOracleById(categories: IOracleCategory[], id: string): IOrac
   return null;
 }
 
+export interface UseOracleResult {
+  oracle: IOracle;
+  roll: number;
+  result: IRow;
+  nestedRolls?: Array<UseOracleResult>;
+}
+
 /**
  * Roll on an oracle table.
  * 
@@ -31,9 +109,9 @@ export function findOracleById(categories: IOracleCategory[], id: string): IOrac
  * const { roll, result, nestedRolls, error } = rollOnOracle(oracle, starforged["Oracle Categories"]);
  * console.log(roll, result, nestedRolls, error);
  */
-export function rollOnOracle(oracle: IOracle, categories: IOracleCategory[]): { roll: number; result: IRow | null; nestedRolls?: Array<{ oracle: IOracle; roll: number; result: IRow }>; error?: string } {
+export function useOracle(oracle: IOracle, categories: IOracleCategory[]): UseOracleResult {
   if (!oracle.Table || oracle.Table.length === 0) {
-    return { roll: 0, result: null, error: "This oracle doesn't have a rollable table." };
+    throw new Error("This oracle doesn't have a rollable table.");
   }
   
   // Roll a d100
@@ -45,31 +123,19 @@ export function rollOnOracle(oracle: IOracle, categories: IOracleCategory[]): { 
     const ceiling = row.Ceiling ?? 100;
     
     if (roll >= floor && roll <= ceiling) {
-      const nestedRolls: Array<{ oracle: IOracle; roll: number; result: IRow }> = [];
-      
-      // Check if this row requires additional oracle rolls
+      const nestedRolls: Array<UseOracleResult> = [];
       if (row["Oracle rolls"]) {
         for (const oracleId of row["Oracle rolls"]) {
-          const nestedOracle = findOracleById(categories, oracleId);
-          if (nestedOracle && nestedOracle.Table) {
-            const nestedRoll = Math.floor(Math.random() * 100) + 1;
-            for (const nestedRow of nestedOracle.Table) {
-              const nestedFloor = nestedRow.Floor ?? 1;
-              const nestedCeiling = nestedRow.Ceiling ?? 100;
-              if (nestedRoll >= nestedFloor && nestedRoll <= nestedCeiling) {
-                nestedRolls.push({ oracle: nestedOracle, roll: nestedRoll, result: nestedRow });
-                break;
-              }
-            }
-          }
+          const nestedResult = useOracle(findOracleById(categories, oracleId)!, categories);
+          nestedRolls.push(nestedResult);
         }
       }
       
-      return { roll, result: row, nestedRolls: nestedRolls.length > 0 ? nestedRolls : undefined };
+      return { oracle, roll, result: row, nestedRolls: nestedRolls.length > 0 ? nestedRolls : undefined };
     }
   }
-  
-  return { roll, result: null, error: "Could not find a matching result for the roll." };
+
+  throw new Error("Could not find a matching result for the roll.");
 }
 
 /**
@@ -119,15 +185,15 @@ function getAllOraclesFromCategory(category: IOracleCategory): IOracle[] {
  * Roll on all oracles in a category.
  * 
  * @example
- * const results = rollOnCategory(category, starforged["Oracle Categories"]);
+ * const results = useOracleCategory(category, starforged["Oracle Categories"]);
  * console.log(results);
  */
-export function rollOnCategory(category: IOracleCategory, categories: IOracleCategory[]): Array<{ oracle: IOracle; roll: number; result: IRow; nestedRolls?: Array<{ oracle: IOracle; roll: number; result: IRow }> }> {
+export function useOracleCategory(category: IOracleCategory, categories: IOracleCategory[]): Array<UseOracleResult> {
   const oracles = getAllOraclesFromCategory(category);
-  const results: Array<{ oracle: IOracle; roll: number; result: IRow; nestedRolls?: Array<{ oracle: IOracle; roll: number; result: IRow }> }> = [];
+  const results: Array<UseOracleResult> = [];
   
   for (const oracle of oracles) {
-    const rollResult = rollOnOracle(oracle, categories);
+    const rollResult = useOracle(oracle, categories);
     if (rollResult.result) {
       results.push({
         oracle,
@@ -139,65 +205,5 @@ export function rollOnCategory(category: IOracleCategory, categories: IOracleCat
   }
   
   return results;
-}
-
-/**
- * Collect all oracle names with their IDs for autocomplete.
- * 
- * @example
- * const oracles = collectOracles(starforged["Oracle Categories"]);
- * console.log(oracles);
- */
-export function collectOracles(categories: IOracleCategory[], path: string[] = []): Array<{ name: string; path: string[]; id: string }> {
-  const oracles: Array<{ name: string; path: string[]; id: string }> = [];
-  
-  for (const category of categories) {
-    if (category.Oracles) {
-      for (const oracle of category.Oracles) {
-        if (oracle.Table) {
-          oracles.push({ name: oracle.Display.Title, path: [...path, category.Display.Title], id: oracle.$id });
-          if (oracle.Aliases) {
-            for (const alias of oracle.Aliases) {
-              oracles.push({ name: alias, path: [...path, category.Display.Title], id: oracle.$id });
-            }
-          }
-        }
-      }
-    }
-    if (category.Categories) {
-      oracles.push(...collectOracles(category.Categories, [...path, category.Display.Title]));
-    }
-  }
-  
-  return oracles;
-}
-
-/**
- * Collect all category names with their IDs for autocomplete.
- * 
- * @example
- * const categories = collectCategories(starforged["Oracle Categories"]);
- * console.log(categories);
- */
-export function collectCategories(categories: IOracleCategory[], path: string[] = []): Array<{ name: string; path: string[]; id: string; hasOracles: boolean }> {
-  const result: Array<{ name: string; path: string[]; id: string; hasOracles: boolean }> = [];
-  
-  for (const category of categories) {
-    const hasOracles = getAllOraclesFromCategory(category).length > 0;
-    if (hasOracles) {
-      result.push({ 
-        name: category.Display.Title, 
-        path: [...path], 
-        id: category.$id,
-        hasOracles: true
-      });
-    }
-    
-    if (category.Categories) {
-      result.push(...collectCategories(category.Categories, [...path, category.Display.Title]));
-    }
-  }
-  
-  return result;
 }
 
