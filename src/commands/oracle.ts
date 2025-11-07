@@ -10,14 +10,14 @@ export const data = new SlashCommandBuilder()
   .setDescription('Roll on an oracle table or entire category.')
   .addStringOption(option =>
     option
-      .setName('name')
+      .setName('table')
       .setDescription('The name of the oracle table or category to roll on')
       .setRequired(true)
       .setAutocomplete(true)
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const value = interaction.options.getString('name', true);
+  const value = interaction.options.getString('table', true);
 
   const [type, id] = value.split(':');
   
@@ -90,7 +90,7 @@ async function handleOracleRoll(interaction: ChatInputCommandInteraction, id: st
   }
   
   // Format the response
-  let response =`# 🔮 ${result.Result}\n`;
+  let response =`# 🔮 ${sanitizeResult(result.Result)}\n`;
   if (result.Summary) {
     response += `${result.Summary}\n`;
   }
@@ -100,7 +100,7 @@ async function handleOracleRoll(interaction: ChatInputCommandInteraction, id: st
   // Add nested oracle rolls if any
   if (nestedRolls) {
     for (const nested of nestedRolls) {
-      response += `- **${nested.oracle.Name}**: ${nested.result.Result}\n`;
+      response += `- **${nested.oracle.Name}**: ${sanitizeResult(nested.result.Result)}\n`;
       if (nested.result.Summary) {
         response += `  -# ${nested.result.Summary}\n`;
       }
@@ -133,10 +133,10 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
   }
   
   // Format the response
-  let response = `# 🔮 ${category.Display.Title}\n`;
+  let response = '';
   
   for (const { oracle, roll, result, nestedRolls } of results) {
-    response += `- **${oracle.Name}**: ${result.Result}\n`;
+    response += `- **${oracle.Name}**: ${sanitizeResult(result.Result)}\n`;
     if (result.Summary) {
       response += `  -# ${result.Summary}\n`;
     }
@@ -145,7 +145,7 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
     // Add nested oracle rolls if any
     if (nestedRolls) {
       for (const nested of nestedRolls) {
-        response += `  - **${nested.oracle.Name}**: ${nested.result.Result}\n`;
+        response += `  - **${nested.oracle.Name}**: ${sanitizeResult(nested.result.Result)}\n`;
         if (nested.result.Summary) {
           response += `    -# ${nested.result.Summary}\n`;
         }
@@ -153,6 +153,8 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
       }
     }
   }
+
+  response += `-# ◇ ${category.Display.Title}\n`;
 
   const content = new TextDisplayBuilder().setContent(response);
   const iconHrefs = getIconHrefs(category);
@@ -180,5 +182,9 @@ function getIconHrefs(category: IOracleCategory): string[] {
     ...(category.Display.Images?.map(image => image.replace("../../img/raster/", "https://raw.githubusercontent.com/rsek/dataforged/refs/heads/main/img/raster/")) ?? []),
     category.Display.Icon?.replace("../../img/vector/", "https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/Oracles/").replace(".svg", ".png"),
   ].filter(href => href !== undefined);
+}
+
+function sanitizeResult(text: string): string {
+  return text.replace(/\[⏵([^\]]+)\]\(Starforged\/Oracles\/[^\/]+\/([^\)]+)\)/g, "$1");
 }
 
