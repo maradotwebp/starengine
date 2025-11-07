@@ -28,7 +28,7 @@ export function formatOracleRoll({
  * Format a response for a oracle roll as a list to be shown to the client.
  */
 export function formatOracleRollAsList(
-	{ item, roll, result }: RollResult,
+	{ item, roll, result, nestedRolls }: RollResult,
 	indentLevel: number = 0,
 ): string {
 	const indent = "  ".repeat(indentLevel);
@@ -37,6 +37,13 @@ export function formatOracleRollAsList(
 		response += `${indent}  -# ${result.Summary}\n`;
 	}
 	response += `${indent}  -# \`→ ${roll}\` ◇ ${item.Display.Title}\n`;
+
+	if (nestedRolls) {
+		for (const nested of nestedRolls) {
+			response += formatOracleRollAsList(nested, indentLevel + 1);
+		}
+	}
+
 	return response;
 }
 

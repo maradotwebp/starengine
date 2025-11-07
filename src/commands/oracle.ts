@@ -158,11 +158,6 @@ async function handleRoll(
 	let response = "";
 	for (const result of results) {
 		response += formatOracleRollAsList(result, 0);
-		if (result.nestedRolls) {
-			for (const nested of result.nestedRolls) {
-				response += formatOracleRollAsList(nested, 1);
-			}
-		}
 	}
 	response += `-# ◇ ${item.Display.Title}\n`;
 
