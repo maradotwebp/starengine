@@ -60,7 +60,7 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
 	const focusedValue = interaction.options.getFocused();
 
 	const categoryOptions = categories.map(({ name, path, id }) => ({
-		name: `📚 ${path.join("／")}${path.length > 0 ? "／" : ""}${name}`,
+		name: `${path.join("／")}${path.length > 0 ? "／" : ""}${name}`,
 		value: id,
 		type: "category" as const,
 	}));
