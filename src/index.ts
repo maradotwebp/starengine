@@ -4,6 +4,7 @@ import { readdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { SlashCommand } from "./types/command";
+import type { ButtonInteractionHandler } from "./types/interaction";
 import "./types/discord.d.ts";
 
 // create a new Client instance
@@ -14,7 +15,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Collection to store commands
-client.commands = new Collection<string, SlashCommand>();
+client.commands = new Collection();
+
+// Collection to store button interactions
+client.buttonInteractions = new Collection();
 
 // Load commands from the commands directory
 async function loadCommands() {
@@ -32,8 +36,27 @@ async function loadCommands() {
   }
 }
 
-// Load commands before starting the bot
+// Load button interactions from the interactions directory
+async function loadButtonInteractions() {
+  const interactionsPath = join(__dirname, "interactions");
+  
+  const interactionFiles = readdirSync(interactionsPath).filter(file => file.endsWith('.ts') || file.endsWith('.js'));
+
+  for (const file of interactionFiles) {
+    const filePath = join(interactionsPath, file);
+    const interaction = await import(filePath);
+    if ('handler' in interaction) {
+      const handler = interaction.handler as ButtonInteractionHandler;
+      client.buttonInteractions.set(handler.customId, handler);
+    } else {
+      console.log(`[WARNING] The interaction at ${filePath} is missing a required "handler" property.`);
+    }
+  }
+}
+
+// Load commands and interactions before starting the bot
 await loadCommands();
+await loadButtonInteractions();
 
 // Handle interactions
 client.on(Events.InteractionCreate, async interaction => {
@@ -68,6 +91,33 @@ client.on(Events.InteractionCreate, async interaction => {
       await command.autocomplete(interaction);
     } catch (error) {
       console.error(`Error executing autocomplete for ${interaction.commandName}:`, error);
+    }
+  } else if (interaction.isButton()) {
+    // Find matching button interaction handler
+    const handler = client.buttonInteractions.find((handler) => {
+      const customId = handler.customId;
+      if (typeof customId === 'string') {
+        return interaction.customId === customId;
+      } else {
+        return customId(interaction.customId);
+      }
+    });
+
+    if (!handler) {
+      console.error(`No button interaction handler found for customId: ${interaction.customId}`);
+      return;
+    }
+
+    try {
+      await handler.execute(interaction);
+    } catch (error) {
+      console.error(`Error executing button interaction:`, error);
+      const errorMessage = { content: 'There was an error while executing this interaction!', ephemeral: true };
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp(errorMessage);
+      } else {
+        await interaction.reply(errorMessage);
+      }
     }
   }
 });

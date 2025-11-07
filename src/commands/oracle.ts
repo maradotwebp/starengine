@@ -1,6 +1,7 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, MessageFlags, TextDisplayBuilder, SectionBuilder, ThumbnailBuilder } from "discord.js";
-import { starforged, type IOracleCategory } from 'dataforged';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, MessageFlags, TextDisplayBuilder, SectionBuilder, ThumbnailBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import { starforged, type IOracleCategory, type IOracle, type IRow } from 'dataforged';
 import { findOracleById, findCategoryById, rollOnOracle, rollOnCategory, collectOracles, collectCategories } from '../utils/oracle.js';
+import { formatNestedOracleRoll, formatOracleRoll, sanitizeResult } from "../utils/format.js";
 
 const oracles = collectOracles(starforged["Oracle Categories"]);
 const categories = collectCategories(starforged["Oracle Categories"]);
@@ -68,47 +69,49 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
 
 
 
-async function handleOracleRoll(interaction: ChatInputCommandInteraction, id: string) {
-  const oracle = findOracleById(starforged["Oracle Categories"], id);
+export async function getOracleRollResponse(oracleId: string): Promise<{ content: string; components: ActionRowBuilder<ButtonBuilder>[] }> {
+  const oracle = findOracleById(starforged["Oracle Categories"], oracleId);
 
   if (!oracle) {
-    await interaction.reply({ 
-      content: `❌ Oracle not found`,
-      flags: MessageFlags.Ephemeral
-    });
-    return;
+    throw new Error("Oracle not found");
   }
 
   const { roll, result, nestedRolls, error } = rollOnOracle(oracle, starforged["Oracle Categories"]);
   
   if (error || !result) {
-    await interaction.reply({ 
-      content: `❌ Error: ${error || "Unknown error occurred"}`,
+    throw new Error(error || "Unknown error occurred");
+  }
+  
+  const response = formatOracleRoll(oracle, roll, result, nestedRolls);
+  
+  const rerollButton = new ButtonBuilder()
+    .setCustomId(`oracle_reroll:${oracleId}`)
+    .setEmoji('🔄')
+    .setStyle(ButtonStyle.Secondary);
+  const actionRow = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(rerollButton);
+  
+  return {
+    content: response,
+    components: [actionRow]
+  };
+}
+
+async function handleOracleRoll(interaction: ChatInputCommandInteraction, id: string) {
+  try {
+    const { content, components } = await getOracleRollResponse(id);
+    await interaction.reply({
+      content,
+      components
+    });
+  } catch (error) {
+    console.error(`Error handling oracle reroll:`, error);
+    await interaction.reply({
+      content: `❌ Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`,
       flags: MessageFlags.Ephemeral
     });
     return;
   }
-  
-  // Format the response
-  let response =`# 🔮 ${sanitizeResult(result.Result)}\n`;
-  if (result.Summary) {
-    response += `${result.Summary}\n`;
-  }
-
-  response += `-# \`→ ${roll}\` ◇ ${oracle.Display.Title}\n`;
-  
-  // Add nested oracle rolls if any
-  if (nestedRolls) {
-    for (const nested of nestedRolls) {
-      response += `- **${nested.oracle.Name}**: ${sanitizeResult(nested.result.Result)}\n`;
-      if (nested.result.Summary) {
-        response += `  -# ${nested.result.Summary}\n`;
-      }
-      response += `  -# \`→ ${nested.roll}\` ◇ ${nested.oracle.Display.Title}\n`;
-    }
-  }
-  
-  await interaction.reply(response);
 }
 
 async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: string) {
@@ -134,31 +137,20 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
   
   // Format the response
   let response = '';
-  
   for (const { oracle, roll, result, nestedRolls } of results) {
-    response += `- **${oracle.Name}**: ${sanitizeResult(result.Result)}\n`;
-    if (result.Summary) {
-      response += `  -# ${result.Summary}\n`;
-    }
-    response += `  -# \`→ ${roll}\` ◇ ${oracle.Display.Title}\n`;
-    
-    // Add nested oracle rolls if any
+    response += formatNestedOracleRoll(oracle, roll, result, 0);
     if (nestedRolls) {
       for (const nested of nestedRolls) {
-        response += `  - **${nested.oracle.Name}**: ${sanitizeResult(nested.result.Result)}\n`;
-        if (nested.result.Summary) {
-          response += `    -# ${nested.result.Summary}\n`;
-        }
-        response += `    -# \`→ ${nested.roll}\` ◇ ${nested.oracle.Display.Title}\n`;
+        response += formatNestedOracleRoll(nested.oracle, nested.roll, nested.result, 1);
       }
     }
   }
-
   response += `-# ◇ ${category.Display.Title}\n`;
 
   const content = new TextDisplayBuilder().setContent(response);
   const iconHrefs = getIconHrefs(category);
 
+  // Add a thumbnail if available
   if (iconHrefs.length > 0) {
     const section = new SectionBuilder().addTextDisplayComponents(content);
     const randomIconHref = iconHrefs[Math.floor(Math.random() * iconHrefs.length)]!;
@@ -182,9 +174,5 @@ function getIconHrefs(category: IOracleCategory): string[] {
     ...(category.Display.Images?.map(image => image.replace("../../img/raster/", "https://raw.githubusercontent.com/rsek/dataforged/refs/heads/main/img/raster/")) ?? []),
     category.Display.Icon?.replace("../../img/vector/", "https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/Oracles/").replace(".svg", ".png"),
   ].filter(href => href !== undefined);
-}
-
-function sanitizeResult(text: string): string {
-  return text.replace(/\[⏵([^\]]+)\]\(Starforged\/Oracles\/[^\/]+\/([^\)]+)\)/g, "$1");
 }
 
