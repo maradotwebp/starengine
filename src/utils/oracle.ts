@@ -154,18 +154,18 @@ export function collectOracles(categories: IOracleCategory[], path: string[] = [
   for (const category of categories) {
     if (category.Oracles) {
       for (const oracle of category.Oracles) {
-        if (oracle.Name && oracle.Table && oracle.$id) {
-          oracles.push({ name: oracle.Name, path: [...path, category.Name], id: oracle.$id });
+        if (oracle.Table) {
+          oracles.push({ name: oracle.Display.Title, path: [...path, category.Display.Title], id: oracle.$id });
           if (oracle.Aliases) {
             for (const alias of oracle.Aliases) {
-              oracles.push({ name: alias, path: [...path, category.Name], id: oracle.$id });
+              oracles.push({ name: alias, path: [...path, category.Display.Title], id: oracle.$id });
             }
           }
         }
       }
     }
     if (category.Categories) {
-      oracles.push(...collectOracles(category.Categories, [...path, category.Name]));
+      oracles.push(...collectOracles(category.Categories, [...path, category.Display.Title]));
     }
   }
   
@@ -184,9 +184,9 @@ export function collectCategories(categories: IOracleCategory[], path: string[] 
   
   for (const category of categories) {
     const hasOracles = getAllOraclesFromCategory(category).length > 0;
-    if (hasOracles && category.$id && category.Name) {
+    if (hasOracles) {
       result.push({ 
-        name: category.Name, 
+        name: category.Display.Title, 
         path: [...path], 
         id: category.$id,
         hasOracles: true
@@ -194,7 +194,7 @@ export function collectCategories(categories: IOracleCategory[], path: string[] 
     }
     
     if (category.Categories) {
-      result.push(...collectCategories(category.Categories, [...path, category.Name]));
+      result.push(...collectCategories(category.Categories, [...path, category.Display.Title]));
     }
   }
   

@@ -100,11 +100,11 @@ async function handleOracleRoll(interaction: ChatInputCommandInteraction, id: st
   // Add nested oracle rolls if any
   if (nestedRolls) {
     for (const nested of nestedRolls) {
-      response += `${nested.result.Result}\n`;
+      response += `- **${nested.oracle.Name}**: ${nested.result.Result}\n`;
       if (nested.result.Summary) {
-        response += `-# ${nested.result.Summary}\n`;
+        response += `  -# ${nested.result.Summary}\n`;
       }
-      response += `-# \`→ ${nested.roll}\` ◇ ${nested.oracle.Display.Title}\n`;
+      response += `  -# \`→ ${nested.roll}\` ◇ ${nested.oracle.Display.Title}\n`;
     }
   }
   
@@ -126,7 +126,7 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
   
   if (results.length === 0) {
     await interaction.reply({ 
-      content: `❌ Category "${category.Name}" does not contain any rollable oracles.`,
+      content: `❌ Category "${category.Display.Title}" does not contain any rollable oracles.`,
       flags: MessageFlags.Ephemeral
     });
     return;
@@ -136,20 +136,20 @@ async function handleCategoryRoll(interaction: ChatInputCommandInteraction, id: 
   let response = `# 🔮 ${category.Display.Title}\n`;
   
   for (const { oracle, roll, result, nestedRolls } of results) {
-    response += `**${oracle.Name}**: ${result.Result}\n`;
+    response += `- **${oracle.Name}**: ${result.Result}\n`;
     if (result.Summary) {
-      response += `-# ${result.Summary}\n`;
+      response += `  -# ${result.Summary}\n`;
     }
-    response += `-# \`→ ${roll}\` ◇ ${oracle.Display.Title}\n`;
+    response += `  -# \`→ ${roll}\` ◇ ${oracle.Display.Title}\n`;
     
     // Add nested oracle rolls if any
     if (nestedRolls) {
       for (const nested of nestedRolls) {
-        response += `**${nested.oracle.Name}**: ${nested.result.Result}\n`;
+        response += `  - **${nested.oracle.Name}**: ${nested.result.Result}\n`;
         if (nested.result.Summary) {
-          response += `-# ${nested.result.Summary}\n`;
+          response += `    -# ${nested.result.Summary}\n`;
         }
-        response += `-# \`→ ${nested.roll}\` ◇ ${nested.oracle.Display.Title}\n`;
+        response += `    -# \`→ ${nested.roll}\` ◇ ${nested.oracle.Display.Title}\n`;
       }
     }
   }
