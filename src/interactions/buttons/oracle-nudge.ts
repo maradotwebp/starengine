@@ -1,6 +1,6 @@
 import { type ButtonInteraction, MessageFlags } from "discord.js";
-import { getRollResponse } from "../commands/oracle.js";
-import type { AppButtonInteraction } from "../types/interaction.js";
+import { getRollResponse } from "../../commands/oracle.js";
+import type { AppButtonInteraction } from "../../types/interaction/button.js";
 
 export const interaction: AppButtonInteraction = {
 	customId: (customId: string) => customId.startsWith("oracle_nudge:"),
@@ -16,3 +16,4 @@ export const interaction: AppButtonInteraction = {
 		});
 	},
 };
+

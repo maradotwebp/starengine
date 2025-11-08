@@ -9,7 +9,7 @@ import {
 	REST,
 	Routes,
 } from "discord.js";
-import type { AppButtonInteraction } from "./types/interaction";
+import type { AppButtonInteraction } from "./types/interaction/button.ts";
 
 import "./types/discord.d.ts";
 import type { AppSlashCommand } from "./types/command.ts";
@@ -53,7 +53,7 @@ async function loadCommands() {
  * Load button interactions from the interactions directory.
  */
 async function loadButtonInteractions() {
-	const interactionsPath = join(__dirname, "interactions");
+	const interactionsPath = join(__dirname, "interactions", "buttons");
 
 	const interactionFiles = readdirSync(interactionsPath).filter(
 		(file) => file.endsWith(".ts") || file.endsWith(".js"),

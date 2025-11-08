@@ -1,6 +1,6 @@
 import { type ButtonInteraction, MessageFlags } from "discord.js";
-import { getProgressTrackComponents } from "../commands/progress.js";
-import type { AppButtonInteraction } from "../types/interaction.js";
+import { getProgressTrackComponents } from "../../commands/progress.js";
+import type { AppButtonInteraction } from "../../types/interaction/button.js";
 
 export const interaction: AppButtonInteraction = {
 	customId: (customId: string) => customId.startsWith("progress_set:"),
@@ -44,3 +44,4 @@ export const interaction: AppButtonInteraction = {
 		});
 	},
 };
+
