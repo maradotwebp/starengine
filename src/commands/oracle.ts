@@ -18,6 +18,7 @@ import {
 	collectRollableItems,
 	findRollableItemById,
 	findRowIndexByRoll,
+	isRollable,
 	type RollableItem,
 	rollItem,
 	rollItemAtRow,
@@ -84,85 +85,55 @@ export async function getRollResponse(
 			? rollItemAtRow(item, rowIndex, starforged["Oracle Categories"])
 			: rollItem(item, starforged["Oracle Categories"]);
 
-	// If result is an array (category roll), we can't use interactive buttons
-	if (Array.isArray(result)) {
-		throw new Error("Cannot get interactive response for category rolls");
-	}
+	const isCategoryRoll = Array.isArray(result);
+	const response = isCategoryRoll
+		? result.map((result) => formatOracleRollAsList(result, 0)).join("")
+		: formatOracleRoll(result);
 
-	const response = formatOracleRoll(result);
+	const buttons: ButtonBuilder[] = [];
 
-	// Determine current row index
-	if (result.roll === undefined) {
-		throw new Error("Invalid result: roll is undefined for table item");
-	}
-	const currentRowIndex =
-		rowIndex !== undefined ? rowIndex : findRowIndexByRoll(item, result.roll);
-
-	// Create buttons
 	const addButton = new ButtonBuilder()
 		.setCustomId(`oracle_add:${itemId}`)
 		.setEmoji("➕")
 		.setStyle(ButtonStyle.Primary);
-
-	const nudgeUpButton = new ButtonBuilder()
-		.setCustomId(`oracle_nudge:${itemId}:${currentRowIndex - 1}`)
-		.setEmoji("⬆️")
-		.setStyle(ButtonStyle.Secondary)
-		.setDisabled(currentRowIndex === 0);
-
-	const tableLength = "Table" in item && item.Table ? item.Table.length : 0;
-	const nudgeDownButton = new ButtonBuilder()
-		.setCustomId(`oracle_nudge:${itemId}:${currentRowIndex + 1}`)
-		.setEmoji("⬇️")
-		.setStyle(ButtonStyle.Secondary)
-		.setDisabled(currentRowIndex === tableLength - 1);
 
 	const rerollButton = new ButtonBuilder()
 		.setCustomId(`oracle_reroll:${itemId}`)
 		.setEmoji("🔄")
 		.setStyle(ButtonStyle.Secondary);
 
-	return [
-		new TextDisplayBuilder().setContent(response).toJSON(),
-		new ActionRowBuilder<ButtonBuilder>().addComponents(addButton, nudgeUpButton, nudgeDownButton, rerollButton).toJSON(),
-	];
-}
+	if (isCategoryRoll) {
+		buttons.push(addButton);
+		buttons.push(rerollButton);
+	} else {
+		if (result.roll === undefined) {
+			throw new Error("Invalid result: roll is undefined for table item");
+		}
+		const currentRowIndex =
+			rowIndex !== undefined ? rowIndex : findRowIndexByRoll(item, result.roll);
 
-async function handleRoll(
-	interaction: ChatInputCommandInteraction,
-	item: RollableItem,
-) {
-	// Check if it has a table
-	const hasTable = "Table" in item && item.Table && item.Table.length > 0;
+		const nudgeUpButton = new ButtonBuilder()
+			.setCustomId(`oracle_nudge:${itemId}:${currentRowIndex - 1}`)
+			.setEmoji("⬆️")
+			.setStyle(ButtonStyle.Secondary)
+			.setDisabled(currentRowIndex === 0);
 
-	// If it has a table, use interactive response
-	if (hasTable) {
-		const components = await getRollResponse(item.$id);
-		await interaction.reply({
-			components,
-			flags: MessageFlags.IsComponentsV2,
-		});
-		return;
+		const tableLength = "Table" in item && item.Table ? item.Table.length : 0;
+		const nudgeDownButton = new ButtonBuilder()
+			.setCustomId(`oracle_nudge:${itemId}:${currentRowIndex + 1}`)
+			.setEmoji("⬇️")
+			.setStyle(ButtonStyle.Secondary)
+			.setDisabled(currentRowIndex === tableLength - 1);
+
+		buttons.push(addButton);
+		buttons.push(nudgeUpButton);
+		buttons.push(nudgeDownButton);
+		buttons.push(rerollButton);
 	}
 
-	// Otherwise, roll all sub-oracles and display results
-	const results = rollItem(item, starforged["Oracle Categories"]);
-
-	if (!Array.isArray(results) || results.length === 0) {
-		throw new Error(`"${item.Display.Title}" does not contain any rollable oracles.`);
-	}
-
-	// Format the response
-	let response = "";
-	for (const result of results) {
-		response += formatOracleRollAsList(result, 0);
-	}
-
-	const content = new TextDisplayBuilder().setContent(response);
 	const iconHrefs = getIconHrefs(item);
-
-	// Add a thumbnail if available
 	if (iconHrefs.length > 0) {
+		const content = new TextDisplayBuilder().setContent(response);
 		const section = new SectionBuilder().addTextDisplayComponents(content);
 		const randomIconHref = iconHrefs[
 			Math.floor(Math.random() * iconHrefs.length)
@@ -172,16 +143,33 @@ async function handleRoll(
 				.setURL(randomIconHref)
 				.setDescription(item.Display.Title),
 		);
-		await interaction.reply({
-			components: [section],
-			flags: MessageFlags.IsComponentsV2,
-		});
+		return [
+			section.toJSON(),
+			new ActionRowBuilder<ButtonBuilder>().addComponents(buttons).toJSON(),
+		];
 	} else {
-		await interaction.reply({
-			components: [content],
-			flags: MessageFlags.IsComponentsV2,
-		});
+		return [
+			new TextDisplayBuilder().setContent(response).toJSON(),
+			new ActionRowBuilder<ButtonBuilder>().addComponents(buttons).toJSON(),
+		];
 	}
+}
+
+async function handleRoll(
+	interaction: ChatInputCommandInteraction,
+	item: RollableItem,
+) {
+	if (!isRollable(item)) {
+		throw new Error(
+			`"${item.Display.Title}" does not contain any rollable oracles.`,
+		);
+	}
+
+	const components = await getRollResponse(item.$id);
+	await interaction.reply({
+		components,
+		flags: MessageFlags.IsComponentsV2,
+	});
 }
 
 function getIconHrefs(item: RollableItem): string[] {
