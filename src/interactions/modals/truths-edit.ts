@@ -1,4 +1,4 @@
-import type { ISettingTruth, ISettingTruthOption } from "dataforged";
+import type { IRow, ISettingTruth, ISettingTruthOption } from "dataforged";
 import { starforged } from "dataforged";
 import { MessageFlags, type ModalSubmitInteraction } from "discord.js";
 import { getTruthComponents } from "../../commands/truths.js";
@@ -68,7 +68,7 @@ export const interaction: AppModalInteraction = {
 			}
 
 			const selectedOption = truth.Table[optionIndex] as ISettingTruthOption;
-			truthContent = selectedOption.Description ?? "";
+			truthContent = formatTruthDescription(selectedOption);
 		} else {
 			// Neither provided, keep the current state
 			truthContent = "*No Option selected yet.*";
@@ -87,3 +87,43 @@ export const interaction: AppModalInteraction = {
 		});
 	},
 };
+
+/**
+ * Format a truth option, rolling on its subtable if available.
+ */
+function formatTruthDescription(option: ISettingTruthOption): string {
+	let content = option.Description ?? "";
+
+	// Check if the option has a subtable
+	if (option.Subtable && option.Subtable.length > 0) {
+		const subtableResult = rollOnSubtable(option.Subtable);
+		if (subtableResult) {
+			content += `\n${subtableResult}`;
+		}
+	}
+
+	return content;
+}
+
+/**
+ * Roll on a truth option subtable.
+ */
+function rollOnSubtable(subtable: IRow[]): string | null {
+	const roll = Math.floor(Math.random() * 100) + 1;
+
+	for (const row of subtable) {
+		const floor = row.Floor ?? 1;
+		const ceiling = row.Ceiling ?? 100;
+
+		if (roll >= floor && roll <= ceiling) {
+			const result = row.Result ?? "";
+			return [
+				`**${result}**`,
+				row.Summary,
+				`-# \`→ ${roll}\` ◇ ${row.Display?.Title ?? "Truth"}`,
+			].filter(Boolean).join("\n");
+		}
+	}
+
+	return null;
+}
