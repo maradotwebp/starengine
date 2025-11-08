@@ -81,10 +81,16 @@ export const interaction: AppButtonInteraction = {
 							.setCustomId("truth_table")
 							.setRequired(false)
 							.setOptions(
+								{
+									label: "Random Option",
+									description: "Select randomly from the table.",
+									value: "random",
+									emoji: "🎲",
+								},
 								...truth.Table.map((option, index) => ({
 									label: `Option ${index + 1}`,
 									description: formatOptionTitle(option),
-									value: index.toString(),
+									value: option.$id,
 								})),
 							),
 					),

@@ -16,6 +16,7 @@ import {
 	encodeCustomId,
 	matchesCustomId,
 } from "../../utils/custom-id.js";
+import { findTruthById, findTruthOptionById } from "../../utils/truths.js";
 import { truthsRerollSchema } from "../buttons/truths-reroll.js";
 
 export const truthsEditSchema: CustomIdSchema<{ truthId: string }, [string]> = {
@@ -31,16 +32,34 @@ export const interaction: AppModalInteraction = {
 
 		// Get the custom truth text or selected table option
 		const customTruth = interaction.fields.getTextInputValue("truth_custom");
-		const selectedOptionIndices =
+		const selectedOptionIds =
 			interaction.fields.getStringSelectValues("truth_table");
+		if (selectedOptionIds.length !== 1) {
+			throw new Error("Only one option can be selected");
+		}
 
-		const selectedOptionIndex =
-			selectedOptionIndices.length > 0
-				? Number.parseInt(selectedOptionIndices[0] as string, 10)
-				: undefined;
+		const truth = findTruthById(starforged["Setting Truths"], truthId);
+		if (!truth) {
+			throw new Error(`Truth not found with ID: ${truthId}`);
+		}
 
-		const components = createTruthComponents(truthId, {
-			selectedOptionIndex,
+		const selectedOptionId = selectedOptionIds[0];
+		if (!selectedOptionId) {
+			throw new Error("No option selected");
+		}
+
+		let selectedOption: ISettingTruthOption | undefined;
+		if (selectedOptionId === "random") {
+			selectedOption = truth.Table[Math.floor(Math.random() * truth.Table.length)];
+		} else {
+			selectedOption = findTruthOptionById(truth, selectedOptionId);
+		}
+		if (!selectedOption) {
+			throw new Error(`Option not found with ID: ${selectedOptionId}`);
+		}
+
+		const components = createTruthComponents(truth, {
+			selectedOption,
 			customTruth,
 		});
 
@@ -60,28 +79,13 @@ export const interaction: AppModalInteraction = {
  * Create components for a truth based on its ID and selected option or custom text.
  */
 export function createTruthComponents(
-	truthId: string,
+	truth: ISettingTruth,
 	options: {
-		selectedOptionIndex?: number;
+		selectedOption?: ISettingTruthOption;
 		customTruth?: string;
-	} = {},
+	},
 ): (TopLevelComponentData | APIMessageTopLevelComponent)[] {
-	const { selectedOptionIndex, customTruth } = options;
-
-	// Find the truth by ID
-	const truths = starforged["Setting Truths"];
-	if (!truths) {
-		throw new Error("No setting truths found.");
-	}
-
-	const truth = truths.find((t) => t?.$id === truthId) as
-		| ISettingTruth
-		| undefined;
-
-	if (!truth) {
-		throw new Error(`Truth not found with ID: ${truthId}`);
-	}
-
+	const { selectedOption, customTruth } = options;
 	let truthContent: string;
 	let components: (TopLevelComponentData | APIMessageTopLevelComponent)[] = [];
 
@@ -89,22 +93,7 @@ export function createTruthComponents(
 		// Use custom truth text
 		truthContent = customTruth.trim();
 		components = getTruthComponents(truth, truthContent);
-	} else if (
-		selectedOptionIndex !== undefined &&
-		selectedOptionIndex !== null
-	) {
-		// Use selected table option
-		if (
-			Number.isNaN(selectedOptionIndex) ||
-			selectedOptionIndex < 0 ||
-			selectedOptionIndex >= truth.Table.length
-		) {
-			throw new Error(`Invalid table option index: ${selectedOptionIndex}`);
-		}
-
-		const selectedOption = truth.Table[
-			selectedOptionIndex
-		] as ISettingTruthOption;
+	} else if (selectedOption) {
 		truthContent = formatTruthDescription(selectedOption);
 
 		const additionalButtons: ButtonBuilder[] = [];
@@ -113,8 +102,8 @@ export function createTruthComponents(
 				new ButtonBuilder()
 					.setCustomId(
 						encodeCustomId(truthsRerollSchema, {
-							truthId,
-							optionIndex: selectedOptionIndex,
+							truthId: truth.$id,
+							optionId: selectedOption.$id,
 						}),
 					)
 					.setEmoji("🔄")
