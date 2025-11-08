@@ -7,16 +7,16 @@ import {
 	matchesCustomId,
 } from "../../utils/custom-id.js";
 
-export const oracleAddSchema: CustomIdSchema<{ itemId: string }, [string]> = {
-	name: "oracle_add",
+export const oracleNewSchema: CustomIdSchema<{ itemId: string }, [string]> = {
+	name: "oracle_new",
 	encode: ({ itemId }) => [itemId],
 	decode: ([itemId]) => ({ itemId }),
 };
 
 export const interaction: AppButtonInteraction = {
-	customId: (customId: string) => matchesCustomId(customId, oracleAddSchema),
+	customId: (customId: string) => matchesCustomId(customId, oracleNewSchema),
 	execute: async (interaction: ButtonInteraction) => {
-		const { itemId } = decodeCustomId(oracleAddSchema, interaction.customId);
+		const { itemId } = decodeCustomId(oracleNewSchema, interaction.customId);
 
 		const components = await getRollResponse(itemId);
 		await interaction.deferUpdate();

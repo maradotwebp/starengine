@@ -11,7 +11,7 @@ import {
 	TextDisplayBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
-import { progressEditSchema } from "../interactions/buttons/progress-edit.js";
+import { progressEditModalSchema } from "../interactions/buttons/progress-open-edit-modal.js";
 import { progressSetSchema } from "../interactions/buttons/progress-set.js";
 import type { AppSlashCommand } from "../types/command.js";
 import { encodeCustomId } from "../utils/custom-id.js";
@@ -128,7 +128,7 @@ export function getProgressTrackComponents(
 
 	const editButton = new ButtonBuilder()
 		.setCustomId(
-			encodeCustomId(progressEditSchema, {
+			encodeCustomId(progressEditModalSchema, {
 				title,
 				rank,
 				currentTickCount,

@@ -13,7 +13,7 @@ import {
 	ThumbnailBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
-import { truthsEditSchema } from "../interactions/buttons/truths-edit.js";
+import { truthsOpenEditModalSchema } from "../interactions/buttons/truths-open-edit-modal.js";
 import type { AppSlashCommand } from "../types/command.js";
 import { encodeCustomId } from "../utils/custom-id.js";
 
@@ -80,7 +80,9 @@ export function getTruthComponents(
 	}
 
 	const editButton = new ButtonBuilder()
-		.setCustomId(encodeCustomId(truthsEditSchema, { truthId: truth.$id }))
+		.setCustomId(
+			encodeCustomId(truthsOpenEditModalSchema, { truthId: truth.$id }),
+		)
 		.setEmoji("✏️")
 		.setLabel("Edit")
 		.setStyle(ButtonStyle.Secondary);

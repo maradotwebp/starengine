@@ -13,7 +13,7 @@ import {
 	ThumbnailBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
-import { oracleAddSchema } from "../interactions/buttons/oracle-add.js";
+import { oracleNewSchema } from "../interactions/buttons/oracle-new.js";
 import { oracleNudgeSchema } from "../interactions/buttons/oracle-nudge.js";
 import { oracleRerollSchema } from "../interactions/buttons/oracle-reroll.js";
 import type { AppSlashCommand } from "../types/command.js";
@@ -101,7 +101,7 @@ export async function getRollResponse(
 	const buttons: ButtonBuilder[] = [];
 
 	const addButton = new ButtonBuilder()
-		.setCustomId(encodeCustomId(oracleAddSchema, { itemId }))
+		.setCustomId(encodeCustomId(oracleNewSchema, { itemId }))
 		.setEmoji("➕")
 		.setStyle(ButtonStyle.Primary);
 

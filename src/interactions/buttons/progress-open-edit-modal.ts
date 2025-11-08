@@ -14,13 +14,13 @@ import {
 	encodeCustomId,
 	matchesCustomId,
 } from "../../utils/custom-id.js";
-import { progressEditModalSchema } from "../modals/progress-edit.js";
+import { progressEditSchema } from "../modals/progress-edit.js";
 
-export const progressEditSchema: CustomIdSchema<
+export const progressEditModalSchema: CustomIdSchema<
 	{ title: string; rank: string; currentTickCount: number },
 	[string, string, string]
 > = {
-	name: "progress_edit",
+	name: "progress_open_edit_modal",
 	encode: ({ title, rank, currentTickCount }) => [
 		title,
 		rank,
@@ -34,16 +34,17 @@ export const progressEditSchema: CustomIdSchema<
 };
 
 export const interaction: AppButtonInteraction = {
-	customId: (customId: string) => matchesCustomId(customId, progressEditSchema),
+	customId: (customId: string) =>
+		matchesCustomId(customId, progressEditModalSchema),
 	execute: async (interaction: ButtonInteraction) => {
 		const { title, rank, currentTickCount } = decodeCustomId(
-			progressEditSchema,
+			progressEditModalSchema,
 			interaction.customId,
 		);
 
 		const modal = new ModalBuilder()
 			.setCustomId(
-				encodeCustomId(progressEditModalSchema, {
+				encodeCustomId(progressEditSchema, {
 					title,
 					rank,
 					currentTickCount,

@@ -17,25 +17,17 @@ import {
 	matchesCustomId,
 } from "../../utils/custom-id.js";
 import { truthsRerollSchema } from "../buttons/truths-reroll.js";
-import { formatOracleRollAsList } from "../../utils/format.js";
 
-export const truthsEditModalSchema: CustomIdSchema<
-	{ truthId: string },
-	[string]
-> = {
-	name: "truths_edit_modal",
+export const truthsEditSchema: CustomIdSchema<{ truthId: string }, [string]> = {
+	name: "truths_edit",
 	encode: ({ truthId }) => [truthId],
 	decode: ([truthId]) => ({ truthId }),
 };
 
 export const interaction: AppModalInteraction = {
-	customId: (customId: string) =>
-		matchesCustomId(customId, truthsEditModalSchema),
+	customId: (customId: string) => matchesCustomId(customId, truthsEditSchema),
 	execute: async (interaction: ModalSubmitInteraction) => {
-		const { truthId } = decodeCustomId(
-			truthsEditModalSchema,
-			interaction.customId,
-		);
+		const { truthId } = decodeCustomId(truthsEditSchema, interaction.customId);
 
 		// Get the custom truth text or selected table option
 		const customTruth = interaction.fields.getTextInputValue("truth_custom");
@@ -110,7 +102,9 @@ export function createTruthComponents(
 			throw new Error(`Invalid table option index: ${selectedOptionIndex}`);
 		}
 
-		const selectedOption = truth.Table[selectedOptionIndex] as ISettingTruthOption;
+		const selectedOption = truth.Table[
+			selectedOptionIndex
+		] as ISettingTruthOption;
 		truthContent = formatTruthDescription(selectedOption);
 
 		const additionalButtons: ButtonBuilder[] = [];

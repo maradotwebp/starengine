@@ -10,11 +10,11 @@ import {
 	matchesCustomId,
 } from "../../utils/custom-id.js";
 
-export const progressEditModalSchema: CustomIdSchema<
+export const progressEditSchema: CustomIdSchema<
 	{ title: string; rank: string; currentTickCount: number },
 	[string, string, string]
 > = {
-	name: "progress_edit_modal",
+	name: "progress_edit",
 	encode: ({ title, rank, currentTickCount }) => [
 		title,
 		rank,
@@ -28,11 +28,10 @@ export const progressEditModalSchema: CustomIdSchema<
 };
 
 export const interaction: AppModalInteraction = {
-	customId: (customId: string) =>
-		matchesCustomId(customId, progressEditModalSchema),
+	customId: (customId: string) => matchesCustomId(customId, progressEditSchema),
 	execute: async (interaction: ModalSubmitInteraction) => {
 		const { currentTickCount } = decodeCustomId(
-			progressEditModalSchema,
+			progressEditSchema,
 			interaction.customId,
 		);
 

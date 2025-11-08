@@ -15,18 +15,25 @@ import {
 	encodeCustomId,
 	matchesCustomId,
 } from "../../utils/custom-id.js";
-import { truthsEditModalSchema } from "../modals/truths-edit.js";
+import { truthsEditSchema } from "../modals/truths-edit.js";
 
-export const truthsEditSchema: CustomIdSchema<{ truthId: string }, [string]> = {
-	name: "truths_edit",
+export const truthsOpenEditModalSchema: CustomIdSchema<
+	{ truthId: string },
+	[string]
+> = {
+	name: "truths_open_edit_modal",
 	encode: ({ truthId }) => [truthId],
 	decode: ([truthId]) => ({ truthId }),
 };
 
 export const interaction: AppButtonInteraction = {
-	customId: (customId: string) => matchesCustomId(customId, truthsEditSchema),
+	customId: (customId: string) =>
+		matchesCustomId(customId, truthsOpenEditModalSchema),
 	execute: async (interaction: ButtonInteraction) => {
-		const { truthId } = decodeCustomId(truthsEditSchema, interaction.customId);
+		const { truthId } = decodeCustomId(
+			truthsOpenEditModalSchema,
+			interaction.customId,
+		);
 
 		// Find the truth by ID
 		const truths = starforged["Setting Truths"];
@@ -54,7 +61,7 @@ export const interaction: AppButtonInteraction = {
 		};
 
 		const modal = new ModalBuilder()
-			.setCustomId(encodeCustomId(truthsEditModalSchema, { truthId }))
+			.setCustomId(encodeCustomId(truthsEditSchema, { truthId }))
 			.setTitle(`Edit ${truth.Display.Title}`)
 			.addLabelComponents(
 				new LabelBuilder()
