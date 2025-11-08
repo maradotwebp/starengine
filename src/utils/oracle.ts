@@ -1,10 +1,5 @@
 import type { IOracle, IOracleCategory, IRow } from "dataforged";
 
-// Constants
-const DICE_MIN = 1;
-const DICE_MAX = 100;
-
-// Types
 /**
  * A rollable item can be either an oracle with a table, or a category/oracle with sub-oracles.
  */
@@ -32,31 +27,44 @@ export interface RollResult {
 	nestedRolls?: Array<RollResult>;
 }
 
-// ============================================================================
-// Public API - Collection Functions
-// ============================================================================
+/**
+ * Minimum value for dice rolls.
+ */
+const DICE_MIN = 1;
+
+/**
+ * Maximum value for dice rolls.
+ */
+const DICE_MAX = 100;
 
 /**
  * Checks if an item is rollable (has a table or rollable children).
+ *
+ * @example
+ * const item = findRollableItemById(starforged["Oracle Categories"], "Starforged/Oracles/Characters/Revealed_Aspect");
+ * if (isRollable(item)) {
+ *   console.log("This item can be rolled");
+ * }
  */
 export function isRollable(item: RollableItem): boolean {
-	// Has a table
 	if ("Table" in item && item.Table && item.Table.length > 0) {
 		return true;
 	}
 
-	// Has rollable oracles
 	if ("Oracles" in item && item.Oracles && item.Oracles.length > 0) {
 		return item.Oracles.some(isRollable);
 	}
 
-	// Has rollable categories
 	if ("Categories" in item && item.Categories && item.Categories.length > 0) {
 		return item.Categories.some(isRollable);
 	}
 
 	return false;
 }
+
+// ============================================================================
+// Collection Functions
+// ============================================================================
 
 /**
  * Collect all rollable items (oracles and categories) for autocomplete.
@@ -74,7 +82,6 @@ export function collectRollableItems(
 	for (const category of categories) {
 		const currentPath = [...path, category.Display.Title];
 
-		// Process the category itself if it's rollable
 		if (isRollable(category)) {
 			items.push({
 				name: category.Display.Title,
@@ -83,14 +90,12 @@ export function collectRollableItems(
 			});
 		}
 
-		// Process oracles in this category
 		if (category.Oracles) {
 			for (const oracle of category.Oracles) {
 				items.push(...collectFromOracle(oracle, currentPath));
 			}
 		}
 
-		// Recurse into subcategories
 		if (category.Categories) {
 			items.push(...collectRollableItems(category.Categories, currentPath));
 		}
@@ -99,49 +104,8 @@ export function collectRollableItems(
 	return items;
 }
 
-/**
- * Helper to collect rollable items from an oracle and its children.
- */
-function collectFromOracle(
-	oracle: IOracle,
-	path: string[],
-): CollectedRollableItem[] {
-	const items: CollectedRollableItem[] = [];
-
-	// Add this oracle if it's rollable
-	if (isRollable(oracle)) {
-		items.push({
-			name: oracle.Display.Title,
-			path: [...path],
-			id: oracle.$id,
-		});
-
-		// Add aliases
-		if (oracle.Aliases) {
-			for (const alias of oracle.Aliases) {
-				items.push({
-					name: alias,
-					path: [...path],
-					id: oracle.$id,
-				});
-			}
-		}
-	}
-
-	// Recurse into sub-oracles
-	if (oracle.Oracles) {
-		for (const subOracle of oracle.Oracles) {
-			items.push(
-				...collectFromOracle(subOracle, [...path, oracle.Display.Title]),
-			);
-		}
-	}
-
-	return items;
-}
-
 // ============================================================================
-// Public API - Search Functions
+// Search Functions
 // ============================================================================
 
 /**
@@ -156,12 +120,10 @@ export function findRollableItemById(
 	id: string,
 ): RollableItem | null {
 	for (const category of categories) {
-		// Check if this category matches
 		if (category.$id === id) {
 			return category;
 		}
 
-		// Check oracles in this category
 		if (category.Oracles) {
 			for (const oracle of category.Oracles) {
 				const found = findInOracleTree(oracle, id);
@@ -169,7 +131,6 @@ export function findRollableItemById(
 			}
 		}
 
-		// Recurse into subcategories
 		if (category.Categories) {
 			const found = findRollableItemById(category.Categories, id);
 			if (found) return found;
@@ -179,9 +140,184 @@ export function findRollableItemById(
 }
 
 /**
+ * Find the row index for a given roll value in a rollable item with a table.
+ *
+ * @example
+ * const item = findRollableItemById(starforged["Oracle Categories"], "Starforged/Oracles/Characters/Revealed_Aspect");
+ * const rowIndex = findRowIndexByRoll(item, 42);
+ * console.log(`Roll 42 corresponds to row ${rowIndex}`);
+ */
+export function findRowIndexByRoll(item: RollableItem, roll: number): number {
+	if (!("Table" in item) || !item.Table || item.Table.length === 0) {
+		throw new Error("This item doesn't have a rollable table.");
+	}
+
+	for (let i = 0; i < item.Table.length; i++) {
+		const row = item.Table[i] as IRow;
+		const floor = row.Floor ?? DICE_MIN;
+		const ceiling = row.Ceiling ?? DICE_MAX;
+
+		if (roll >= floor && roll <= ceiling) {
+			return i;
+		}
+	}
+
+	throw new Error("Could not find a matching row for the roll.");
+}
+
+// ============================================================================
+// Rolling Functions
+// ============================================================================
+
+/**
+ * Roll on a rollable item (oracle or category).
+ * Returns a single result if the item has a table, or multiple results if it contains sub-oracles.
+ *
+ * @example
+ * const result = rollItem(item, starforged["Oracle Categories"]);
+ * if (Array.isArray(result)) {
+ *   // Multiple rolls from a category
+ *   console.log(result);
+ * } else {
+ *   // Single roll from an oracle
+ *   console.log(result);
+ * }
+ */
+export function rollItem(
+	item: RollableItem,
+	categories: IOracleCategory[],
+): RollResult | RollResult[] {
+	if ("Table" in item && item.Table && item.Table.length > 0) {
+		const roll = rollDice();
+		const result = findRowByRoll(item.Table, roll);
+		const nestedRolls = processNestedRolls(result, categories);
+
+		return {
+			item,
+			roll,
+			result,
+			nestedRolls,
+		};
+	}
+
+	const nestedRolls: RollResult[] = [];
+
+	if ("Oracles" in item && item.Oracles) {
+		for (const oracle of item.Oracles) {
+			if (isRollable(oracle)) {
+				const result = rollItem(oracle, categories);
+				if (Array.isArray(result)) {
+					nestedRolls.push(...result);
+				} else {
+					nestedRolls.push(result);
+				}
+			}
+		}
+	}
+
+	if ("Categories" in item && item.Categories) {
+		for (const category of item.Categories) {
+			if (isRollable(category)) {
+				const result = rollItem(category, categories);
+				if (Array.isArray(result)) {
+					nestedRolls.push(...result);
+				} else {
+					nestedRolls.push(result);
+				}
+			}
+		}
+	}
+
+	return [
+		{
+			item,
+			nestedRolls,
+		},
+	];
+}
+
+/**
+ * Roll on a rollable item at a specific row index.
+ * Only works for items with a table.
+ *
+ * @example
+ * const result = rollItemAtRow(item, 5, starforged["Oracle Categories"]);
+ * console.log(result);
+ */
+export function rollItemAtRow(
+	item: RollableItem,
+	rowIndex: number,
+	categories: IOracleCategory[],
+): RollResult {
+	if (!("Table" in item) || !item.Table || item.Table.length === 0) {
+		throw new Error("This item doesn't have a rollable table.");
+	}
+
+	if (rowIndex < 0 || rowIndex >= item.Table.length) {
+		throw new Error("Row index out of bounds.");
+	}
+
+	const row = item.Table[rowIndex] as IRow;
+	const roll = row.Floor ?? DICE_MIN;
+	const nestedRolls = processNestedRolls(row, categories);
+
+	return {
+		item,
+		roll,
+		result: row,
+		nestedRolls,
+	};
+}
+
+// ============================================================================
+// Internal Functions
+// ============================================================================
+
+/**
+ * Helper to collect rollable items from an oracle and its children.
+ */
+function collectFromOracle(
+	oracle: IOracle,
+	path: string[],
+): CollectedRollableItem[] {
+	const items: CollectedRollableItem[] = [];
+
+	if (isRollable(oracle)) {
+		items.push({
+			name: oracle.Display.Title,
+			path: [...path],
+			id: oracle.$id,
+		});
+
+		if (oracle.Aliases) {
+			for (const alias of oracle.Aliases) {
+				items.push({
+					name: alias,
+					path: [...path],
+					id: oracle.$id,
+				});
+			}
+		}
+	}
+
+	if (oracle.Oracles) {
+		for (const subOracle of oracle.Oracles) {
+			items.push(
+				...collectFromOracle(subOracle, [...path, oracle.Display.Title]),
+			);
+		}
+	}
+
+	return items;
+}
+
+/**
  * Helper to find an item in an oracle tree.
  */
-function findInOracleTree(oracle: IOracle, id: string): IOracle | null {
+function findInOracleTree(
+	oracle: IOracle,
+	id: string,
+): IOracle | null {
 	if (oracle.$id === id) {
 		return oracle;
 	}
@@ -195,10 +331,6 @@ function findInOracleTree(oracle: IOracle, id: string): IOracle | null {
 
 	return null;
 }
-
-// ============================================================================
-// Public API - Rolling Functions
-// ============================================================================
 
 /**
  * Generates a random dice roll for d100.
@@ -248,131 +380,4 @@ function processNestedRolls(
 	}
 
 	return nestedRolls.length > 0 ? nestedRolls : undefined;
-}
-
-/**
- * Roll on a rollable item (oracle or category).
- * Returns a single result if the item has a table, or multiple results if it contains sub-oracles.
- *
- * @example
- * const result = rollItem(item, starforged["Oracle Categories"]);
- * if (Array.isArray(result)) {
- *   // Multiple rolls from a category
- *   console.log(result);
- * } else {
- *   // Single roll from an oracle
- *   console.log(result);
- * }
- */
-export function rollItem(
-	item: RollableItem,
-	categories: IOracleCategory[],
-): RollResult | RollResult[] {
-	// If it has a table, roll on it
-	if ("Table" in item && item.Table && item.Table.length > 0) {
-		const roll = rollDice();
-		const result = findRowByRoll(item.Table, roll);
-		const nestedRolls = processNestedRolls(result, categories);
-
-		return {
-			item,
-			roll,
-			result,
-			nestedRolls,
-		};
-	}
-
-	// Otherwise, roll on direct children
-	const nestedRolls: RollResult[] = [];
-
-	// Roll on direct oracles
-	if ("Oracles" in item && item.Oracles) {
-		for (const oracle of item.Oracles) {
-			if (isRollable(oracle)) {
-				const result = rollItem(oracle, categories);
-				if (Array.isArray(result)) {
-					// If oracle returns array, add all results as nested
-					nestedRolls.push(...result);
-				} else {
-					nestedRolls.push(result);
-				}
-			}
-		}
-	}
-
-	// Roll on direct categories
-	if ("Categories" in item && item.Categories) {
-		for (const category of item.Categories) {
-			if (isRollable(category)) {
-				const result = rollItem(category, categories);
-				if (Array.isArray(result)) {
-					nestedRolls.push(...result);
-				} else {
-					nestedRolls.push(result);
-				}
-			}
-		}
-	}
-
-	// Return as container result to preserve grouping
-	return [
-		{
-			item,
-			nestedRolls,
-		},
-	];
-}
-
-/**
- * Roll on a rollable item at a specific row index.
- * Only works for items with a table.
- *
- * @example
- * const result = rollItemAtRow(item, 5, starforged["Oracle Categories"]);
- * console.log(result);
- */
-export function rollItemAtRow(
-	item: RollableItem,
-	rowIndex: number,
-	categories: IOracleCategory[],
-): RollResult {
-	if (!("Table" in item) || !item.Table || item.Table.length === 0) {
-		throw new Error("This item doesn't have a rollable table.");
-	}
-
-	if (rowIndex < 0 || rowIndex >= item.Table.length) {
-		throw new Error("Row index out of bounds.");
-	}
-
-	const row = item.Table[rowIndex] as IRow;
-	const roll = row.Floor ?? DICE_MIN;
-	const nestedRolls = processNestedRolls(row, categories);
-
-	return {
-		item,
-		roll,
-		result: row,
-		nestedRolls,
-	};
-}
-
-/**
- * Find the row index for a given roll value in a rollable item with a table.
- */
-export function findRowIndexByRoll(item: RollableItem, roll: number): number {
-	if (!("Table" in item) || !item.Table || item.Table.length === 0) {
-		throw new Error("This item doesn't have a rollable table.");
-	}
-
-	for (let i = 0; i < item.Table.length; i++) {
-		const row = item.Table[i] as IRow;
-		const floor = row.Floor ?? DICE_MIN;
-		const ceiling = row.Ceiling ?? DICE_MAX;
-
-		if (roll >= floor && roll <= ceiling) {
-			return i;
-		}
-	}
-
-	throw new Error("Could not find a matching row for the roll.");
 }

@@ -4,7 +4,8 @@ export interface ButtonInteractionHandler {
 	/**
 	 * The custom ID of the button interaction.
 	 *
-	 * Either a string uniquely identifying the interaction, or a function that returns a boolean indicating if the interaction should be handled.
+	 * Either a string uniquely identifying the interaction,
+	 * or a function that returns a boolean indicating if the interaction should be handled.
 	 */
 	customId: string | ((customId: string) => boolean);
 	/**

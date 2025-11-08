@@ -2,6 +2,11 @@ import type { RollResult } from "./oracle";
 
 /**
  * Format a response for an oracle roll to be shown to the client.
+ *
+ * @example
+ * const result = rollItem(item, starforged["Oracle Categories"]);
+ * const formatted = formatOracleRoll(result);
+ * console.log(formatted);
  */
 export function formatOracleRoll({
 	item,
@@ -9,7 +14,6 @@ export function formatOracleRoll({
 	result,
 	nestedRolls,
 }: RollResult): string {
-	// Container result (oracle/category without table)
 	if (!roll || !result) {
 		let response = "";
 		if (nestedRolls) {
@@ -20,7 +24,6 @@ export function formatOracleRoll({
 		return response;
 	}
 
-	// Normal table roll
 	let response = `## 🔮 ${sanitizeResult(result.Result)}\n`;
 	if (result.Summary) {
 		response += `${result.Summary}\n`;
@@ -38,6 +41,11 @@ export function formatOracleRoll({
 
 /**
  * Format a response for a oracle roll as a list to be shown to the client.
+ *
+ * @example
+ * const result = rollItem(item, starforged["Oracle Categories"]);
+ * const formatted = formatOracleRollAsList(result, 0);
+ * console.log(formatted);
  */
 export function formatOracleRollAsList(
 	{ item, roll, result, nestedRolls }: RollResult,
@@ -46,7 +54,6 @@ export function formatOracleRollAsList(
 ): string {
 	const indent = "  ".repeat(indentLevel);
 
-	// Container result (oracle/category without table) - only show nested rolls with label
 	if (!roll || !result) {
 		if (root) {
 			let response = "";
@@ -68,7 +75,6 @@ export function formatOracleRollAsList(
 		}
 	}
 
-	// Normal table roll
 	let response = `${indent}- **${item.Name}**: ${sanitizeResult(result.Result)}\n`;
 	if (result.Summary) {
 		response += `${indent}  -# ${result.Summary}\n`;
@@ -88,6 +94,10 @@ export function formatOracleRollAsList(
  * Sanitize a result string to remove the link to the oracle.
  *
  * The dataforged library uses links to other oracles in the result string. This function removes those links.
+ *
+ * @example
+ * const sanitized = sanitizeResult("[Action](Starforged/Oracles/Action)");
+ * console.log(sanitized); // "*Action*"
  */
 export function sanitizeResult(text: string): string {
 	return text.replace(/\[(?:⏵)?([^\]]+)\]\([^/]+\/([^)]+)\)/g, "*$1*");

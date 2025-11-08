@@ -24,8 +24,6 @@ import {
 	rollItemAtRow,
 } from "../utils/oracle.js";
 
-const rollableItems = collectRollableItems(starforged["Oracle Categories"]);
-
 export const data = new SlashCommandBuilder()
 	.setName("oracle")
 	.setDescription("Roll on an oracle table or entire category.")
@@ -36,6 +34,8 @@ export const data = new SlashCommandBuilder()
 			.setRequired(true)
 			.setAutocomplete(true),
 	);
+
+const rollableItems = collectRollableItems(starforged["Oracle Categories"]);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
 	const itemId = interaction.options.getString("table", true);
@@ -64,6 +64,9 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
 	await interaction.respond(allOptions);
 }
 
+/**
+ * Get the Discord component response for an oracle roll.
+ */
 export async function getRollResponse(
 	itemId: string,
 	rowIndex?: number,
@@ -73,7 +76,6 @@ export async function getRollResponse(
 		throw new Error("Rollable item not found");
 	}
 
-	// Check if it has a table (can be rolled with row index)
 	const hasTable = "Table" in item && item.Table && item.Table.length > 0;
 
 	if (!hasTable && rowIndex !== undefined) {
@@ -155,6 +157,13 @@ export async function getRollResponse(
 	}
 }
 
+// ============================================================================
+// Internal Functions
+// ============================================================================
+
+/**
+ * Handle an oracle roll interaction.
+ */
 async function handleRoll(
 	interaction: ChatInputCommandInteraction,
 	item: RollableItem,
@@ -172,6 +181,9 @@ async function handleRoll(
 	});
 }
 
+/**
+ * Get icon URLs for an oracle item.
+ */
 function getIconHrefs(item: RollableItem): string[] {
 	return [
 		...(item.Display.Images?.map((image) =>

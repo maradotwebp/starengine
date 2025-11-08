@@ -1,4 +1,3 @@
-// import discord.js
 import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,23 +14,21 @@ import type { ButtonInteractionHandler } from "./types/interaction";
 import "./types/discord.d.ts";
 import type { SlashCommand } from "./types/command.ts";
 
-// create a new Client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-// Get the directory name for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Collection to store commands
 client.commands = new Collection<string, SlashCommand>();
 
-// Collection to store button interactions
 client.buttonInteractions = new Collection<
 	string | ((customId: string) => boolean),
 	ButtonInteractionHandler
 >();
 
-// Load commands from the commands directory
+/**
+ * Load commands from the commands directory.
+ */
 async function loadCommands() {
 	const commandsPath = join(__dirname, "commands");
 	const commandFiles = readdirSync(commandsPath).filter(
@@ -51,7 +48,9 @@ async function loadCommands() {
 	}
 }
 
-// Load button interactions from the interactions directory
+/**
+ * Load button interactions from the interactions directory.
+ */
 async function loadButtonInteractions() {
 	const interactionsPath = join(__dirname, "interactions");
 
@@ -73,10 +72,12 @@ async function loadButtonInteractions() {
 	}
 }
 
-// Load commands and interactions before starting the bot
 await loadCommands();
 await loadButtonInteractions();
 
+/**
+ * Get a formatted error message for Discord.
+ */
 function getErrorMessage(error: unknown) {
 	return {
 		content: `❌ Error: \`${error instanceof Error ? error.message : "Unknown error occurred"}\``,
@@ -84,7 +85,6 @@ function getErrorMessage(error: unknown) {
 	};
 }
 
-// Handle interactions
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (interaction.isChatInputCommand()) {
 		const command = client.commands.get(interaction.commandName);
@@ -126,7 +126,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 			);
 		}
 	} else if (interaction.isButton()) {
-		// Find matching button interaction handler
 		const handler = client.buttonInteractions.find((handler) => {
 			const customId = handler.customId;
 			if (typeof customId === "string") {
@@ -157,29 +156,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
 	}
 });
 
-// listen for the client to be ready
 client.once(Events.ClientReady, async (c) => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 
-	// Register slash commands
 	const rest = new REST().setToken(process.env.DISCORD_TOKEN as string);
 
 	try {
 		console.log("Started refreshing (/) commands.");
 
-		// Get all command data
 		const commandsData = Array.from(client.commands.values()).map((command) =>
 			command.data.toJSON(),
 		);
 
-		// Register commands globally (this can take up to an hour to propagate)
 		/*
-    await rest.put(
-      Routes.applicationCommands(c.user.id),
-      { body: commandsData }
-    );
-    console.log('Successfully reloaded application (/) commands.');
-    */
+		 * Register commands globally (this can take up to an hour to propagate)
+		 * await rest.put(
+		 *   Routes.applicationCommands(c.user.id),
+		 *   { body: commandsData }
+		 * );
+		 * console.log('Successfully reloaded application (/) commands.');
+		 */
 
 		await rest.put(
 			Routes.applicationGuildCommands(c.user.id, "1436123427365851187"),
@@ -191,5 +187,4 @@ client.once(Events.ClientReady, async (c) => {
 	}
 });
 
-// login with the token from .env
 client.login(process.env.DISCORD_TOKEN);
