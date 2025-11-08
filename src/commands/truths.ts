@@ -65,7 +65,7 @@ export function getTruthComponents(
 	const truthName = truth.Display.Title;
 
 	const content = new TextDisplayBuilder().setContent(
-		[`## ${truth.Display.Title}`, truthContent].join("\n"),
+		[`## ${truth.Display.Title}`, truthContent, `-# > ${truth.Character}`].join("\n"),
 	);
 
 	const section = new SectionBuilder().addTextDisplayComponents(content);
