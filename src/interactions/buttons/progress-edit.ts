@@ -8,37 +8,46 @@ import {
 } from "discord.js";
 import { challengeRanks } from "../../commands/progress.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
+import {
+	type CustomIdSchema,
+	decodeCustomId,
+	encodeCustomId,
+	matchesCustomId,
+} from "../../utils/custom-id.js";
+import { progressEditModalSchema } from "../modals/progress-edit.js";
+
+export const progressEditSchema: CustomIdSchema<
+	{ title: string; rank: string; currentTickCount: number },
+	[string, string, string]
+> = {
+	name: "progress_edit",
+	encode: ({ title, rank, currentTickCount }) => [
+		title,
+		rank,
+		currentTickCount.toString(),
+	],
+	decode: ([title, rank, currentTickCount]) => ({
+		title,
+		rank,
+		currentTickCount: Number.parseInt(currentTickCount, 10),
+	}),
+};
 
 export const interaction: AppButtonInteraction = {
-	customId: (customId: string) => customId.startsWith("progress_edit:"),
+	customId: (customId: string) => matchesCustomId(customId, progressEditSchema),
 	execute: async (interaction: ButtonInteraction) => {
-		const customId = interaction.customId;
-		const parts = customId.replace("progress_edit:", "").split(":");
-
-		// Format: progress_edit:<base64EncodedTitle>:<rank>:<currentTickCount>
-		if (parts.length !== 3) {
-			throw new Error(`Invalid progress_edit customId format: ${customId}`);
-		}
-
-		const [encodedTitle, rank, tickCountStr] = parts;
-
-		if (!encodedTitle || !rank || !tickCountStr) {
-			throw new Error(`Invalid progress_edit customId format: ${customId}`);
-		}
-
-		// Decode title from base64
-		let title: string;
-		try {
-			title = Buffer.from(encodedTitle, "base64").toString("utf-8");
-		} catch (error) {
-			throw new Error(
-				`Failed to decode title from customId: ${customId}. ${error instanceof Error ? error.message : String(error)}`,
-			);
-		}
+		const { title, rank, currentTickCount } = decodeCustomId(
+			progressEditSchema,
+			interaction.customId,
+		);
 
 		const modal = new ModalBuilder()
 			.setCustomId(
-				`progress_edit_modal:${encodedTitle}:${rank}:${tickCountStr}`,
+				encodeCustomId(progressEditModalSchema, {
+					title,
+					rank,
+					currentTickCount,
+				}),
 			)
 			.setTitle("Edit Progress Track")
 			.addLabelComponents(

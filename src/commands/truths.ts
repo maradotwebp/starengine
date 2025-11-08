@@ -13,9 +13,9 @@ import {
 	ThumbnailBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
+import { truthsEditSchema } from "../interactions/buttons/truths-edit.js";
 import type { AppSlashCommand } from "../types/command.js";
-
-
+import { encodeCustomId } from "../utils/custom-id.js";
 
 export const command: AppSlashCommand = {
 	data: new SlashCommandBuilder()
@@ -76,11 +76,8 @@ export function getTruthComponents(
 		);
 	}
 
-	// Encode truth ID as base64 to avoid colon parsing issues
-	const encodedTruthId = Buffer.from(truth.$id, "utf-8").toString("base64");
-
 	const editButton = new ButtonBuilder()
-		.setCustomId(`truths_edit:${encodedTruthId}`)
+		.setCustomId(encodeCustomId(truthsEditSchema, { truthId: truth.$id }))
 		.setEmoji("✏️")
 		.setLabel("Edit")
 		.setStyle(ButtonStyle.Secondary);

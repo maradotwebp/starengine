@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { CustomIdSchema } from "./custom-id";
-import { decodeCustomId, encodeCustomId } from "./custom-id";
+import { decodeCustomId, encodeCustomId, matchesCustomId } from "./custom-id";
 
 describe("custom-id", () => {
 	describe("encode/decode", () => {
@@ -146,6 +146,26 @@ describe("custom-id", () => {
 			};
 
 			expect(() => decodeCustomId(schema, "")).toThrow("Invalid custom ID");
+		});
+	});
+
+	describe("matchesCustomId", () => {
+		test("matches custom ID", () => {
+			const schema: CustomIdSchema<string, [string]> = {
+				name: "hello",
+				encode: (params) => [params],
+				decode: (parts) => parts[0],
+			};
+			expect(matchesCustomId("hello:world", schema)).toBe(true);
+		});
+
+		test("does not match custom ID", () => {
+			const schema: CustomIdSchema<string, [string]> = {
+				name: "test",
+				encode: (params) => [params],
+				decode: (parts) => parts[0],
+			};
+			expect(matchesCustomId("hello:world", schema)).toBe(false);
 		});
 	});
 });

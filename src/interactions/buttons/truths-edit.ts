@@ -9,29 +9,24 @@ import {
 	TextInputStyle,
 } from "discord.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
+import {
+	type CustomIdSchema,
+	decodeCustomId,
+	encodeCustomId,
+	matchesCustomId,
+} from "../../utils/custom-id.js";
+import { truthsEditModalSchema } from "../modals/truths-edit.js";
+
+export const truthsEditSchema: CustomIdSchema<{ truthId: string }, [string]> = {
+	name: "truths_edit",
+	encode: ({ truthId }) => [truthId],
+	decode: ([truthId]) => ({ truthId }),
+};
 
 export const interaction: AppButtonInteraction = {
-	customId: (customId: string) => customId.startsWith("truths_edit:"),
+	customId: (customId: string) => matchesCustomId(customId, truthsEditSchema),
 	execute: async (interaction: ButtonInteraction) => {
-		const customId = interaction.customId;
-		const parts = customId.replace("truths_edit:", "").split(":");
-
-		// Format: truths_edit:<base64EncodedTruthId>
-		if (parts.length !== 1 || !parts[0]) {
-			throw new Error(`Invalid truths_edit customId format: ${customId}`);
-		}
-
-		const [encodedTruthId] = parts;
-
-		// Decode truth ID from base64
-		let truthId: string;
-		try {
-			truthId = Buffer.from(encodedTruthId, "base64").toString("utf-8");
-		} catch (error) {
-			throw new Error(
-				`Failed to decode truth ID from customId: ${customId}. ${error instanceof Error ? error.message : String(error)}`,
-			);
-		}
+		const { truthId } = decodeCustomId(truthsEditSchema, interaction.customId);
 
 		// Find the truth by ID
 		const truths = starforged["Setting Truths"];
@@ -59,7 +54,7 @@ export const interaction: AppButtonInteraction = {
 		};
 
 		const modal = new ModalBuilder()
-			.setCustomId(`truths_edit_modal:${encodedTruthId}`)
+			.setCustomId(encodeCustomId(truthsEditModalSchema, { truthId }))
 			.setTitle(`Edit ${truth.Display.Title}`)
 			.addLabelComponents(
 				new LabelBuilder()

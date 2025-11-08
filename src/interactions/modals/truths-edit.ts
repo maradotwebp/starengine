@@ -3,29 +3,29 @@ import { starforged } from "dataforged";
 import { MessageFlags, type ModalSubmitInteraction } from "discord.js";
 import { getTruthComponents } from "../../commands/truths.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
+import {
+	type CustomIdSchema,
+	decodeCustomId,
+	matchesCustomId,
+} from "../../utils/custom-id.js";
+
+export const truthsEditModalSchema: CustomIdSchema<
+	{ truthId: string },
+	[string]
+> = {
+	name: "truths_edit_modal",
+	encode: ({ truthId }) => [truthId],
+	decode: ([truthId]) => ({ truthId }),
+};
 
 export const interaction: AppModalInteraction = {
-	customId: (customId: string) => customId.startsWith("truths_edit_modal:"),
+	customId: (customId: string) =>
+		matchesCustomId(customId, truthsEditModalSchema),
 	execute: async (interaction: ModalSubmitInteraction) => {
-		const customId = interaction.customId;
-		const parts = customId.replace("truths_edit_modal:", "").split(":");
-
-		// Format: truths_edit_modal:<base64EncodedTruthId>
-		if (parts.length !== 1 || !parts[0]) {
-			throw new Error(`Invalid truths_edit_modal customId format: ${customId}`);
-		}
-
-		const [encodedTruthId] = parts;
-
-		// Decode truth ID from base64
-		let truthId: string;
-		try {
-			truthId = Buffer.from(encodedTruthId, "base64").toString("utf-8");
-		} catch (error) {
-			throw new Error(
-				`Failed to decode truth ID from customId: ${customId}. ${error instanceof Error ? error.message : String(error)}`,
-			);
-		}
+		const { truthId } = decodeCustomId(
+			truthsEditModalSchema,
+			interaction.customId,
+		);
 
 		// Find the truth by ID
 		const truths = starforged["Setting Truths"];

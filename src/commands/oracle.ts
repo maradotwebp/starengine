@@ -13,7 +13,11 @@ import {
 	ThumbnailBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
+import { oracleAddSchema } from "../interactions/buttons/oracle-add.js";
+import { oracleNudgeSchema } from "../interactions/buttons/oracle-nudge.js";
+import { oracleRerollSchema } from "../interactions/buttons/oracle-reroll.js";
 import type { AppSlashCommand } from "../types/command.js";
+import { encodeCustomId } from "../utils/custom-id.js";
 import { formatOracleRoll, formatOracleRollAsList } from "../utils/format.js";
 import {
 	collectRollableItems,
@@ -97,12 +101,12 @@ export async function getRollResponse(
 	const buttons: ButtonBuilder[] = [];
 
 	const addButton = new ButtonBuilder()
-		.setCustomId(`oracle_add:${itemId}`)
+		.setCustomId(encodeCustomId(oracleAddSchema, { itemId }))
 		.setEmoji("➕")
 		.setStyle(ButtonStyle.Primary);
 
 	const rerollButton = new ButtonBuilder()
-		.setCustomId(`oracle_reroll:${itemId}`)
+		.setCustomId(encodeCustomId(oracleRerollSchema, { itemId }))
 		.setEmoji("🔄")
 		.setStyle(ButtonStyle.Secondary);
 
@@ -117,14 +121,24 @@ export async function getRollResponse(
 			rowIndex !== undefined ? rowIndex : findRowIndexByRoll(item, result.roll);
 
 		const nudgeUpButton = new ButtonBuilder()
-			.setCustomId(`oracle_nudge:${itemId}:${currentRowIndex - 1}`)
+			.setCustomId(
+				encodeCustomId(oracleNudgeSchema, {
+					itemId,
+					targetRowIndex: currentRowIndex - 1,
+				}),
+			)
 			.setEmoji("⬆️")
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(currentRowIndex === 0);
 
 		const tableLength = "Table" in item && item.Table ? item.Table.length : 0;
 		const nudgeDownButton = new ButtonBuilder()
-			.setCustomId(`oracle_nudge:${itemId}:${currentRowIndex + 1}`)
+			.setCustomId(
+				encodeCustomId(oracleNudgeSchema, {
+					itemId,
+					targetRowIndex: currentRowIndex + 1,
+				}),
+			)
 			.setEmoji("⬇️")
 			.setStyle(ButtonStyle.Secondary)
 			.setDisabled(currentRowIndex === tableLength - 1);

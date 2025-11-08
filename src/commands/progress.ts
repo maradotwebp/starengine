@@ -11,7 +11,10 @@ import {
 	TextDisplayBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
+import { progressEditSchema } from "../interactions/buttons/progress-edit.js";
+import { progressSetSchema } from "../interactions/buttons/progress-set.js";
 import type { AppSlashCommand } from "../types/command.js";
+import { encodeCustomId } from "../utils/custom-id.js";
 
 interface ChallengeRank {
 	/**
@@ -99,23 +102,38 @@ export function getProgressTrackComponents(
 	);
 	const newTickCountOnRemove = Math.max(currentTickCount - progressInTicks, 0);
 
-	// Encode title as base64 to avoid colon parsing issues
-	const encodedTitle = Buffer.from(title, "utf-8").toString("base64");
-
 	const markButton = new ButtonBuilder()
-		.setCustomId(`progress_set:${encodedTitle}:${rank}:${newTickCountOnMark}`)
+		.setCustomId(
+			encodeCustomId(progressSetSchema, {
+				title,
+				rank,
+				newTickCount: newTickCountOnMark,
+			}),
+		)
 		.setEmoji("➕")
 		.setStyle(ButtonStyle.Primary)
 		.setDisabled(currentTickCount >= MAX_TICKS);
 
 	const removeButton = new ButtonBuilder()
-		.setCustomId(`progress_set:${encodedTitle}:${rank}:${newTickCountOnRemove}`)
+		.setCustomId(
+			encodeCustomId(progressSetSchema, {
+				title,
+				rank,
+				newTickCount: newTickCountOnRemove,
+			}),
+		)
 		.setEmoji("➖")
 		.setStyle(ButtonStyle.Primary)
 		.setDisabled(currentTickCount <= 0);
 
 	const editButton = new ButtonBuilder()
-		.setCustomId(`progress_edit:${encodedTitle}:${rank}:${currentTickCount}`)
+		.setCustomId(
+			encodeCustomId(progressEditSchema, {
+				title,
+				rank,
+				currentTickCount,
+			}),
+		)
 		.setEmoji("✏️")
 		.setStyle(ButtonStyle.Secondary);
 

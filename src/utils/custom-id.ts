@@ -12,7 +12,7 @@ export interface CustomIdSchema<T, U extends string[]> {
 
 /**
  * Encodes parameters into a custom ID.
- * 
+ *
  * @example
  * const schema: CustomIdSchema<{ a: string; b: string }, [string, string]> = {
  *     name: "multi",
@@ -35,7 +35,7 @@ export function encodeCustomId<T, U extends string[]>(
 
 /**
  * Decodes a custom ID into parameters.
- * 
+ *
  * @example
  * const schema: CustomIdSchema<{ a: string; b: string }, [string, string]> = {
  *     name: "multi",
@@ -58,8 +58,21 @@ export function decodeCustomId<T, U extends string[]>(
 		throw new Error(`Invalid data: missing data in custom ID`);
 	}
 	const params = schema.decode(
-		parts.slice(1)
+		parts
+			.slice(1)
 			.map((part) => Buffer.from(part, "base64").toString("utf-8")) as U,
 	);
 	return params;
+}
+
+export function matchesCustomId(
+	customId: string,
+	// biome-ignore lint/suspicious/noExplicitAny: no need to know the types
+	schema: CustomIdSchema<any, any>,
+): boolean {
+	const parts = customId.split(":");
+	if (parts[0] !== schema.name) {
+		return false;
+	}
+	return true;
 }
