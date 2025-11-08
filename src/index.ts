@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -10,6 +10,7 @@ import {
 	Routes,
 } from "discord.js";
 import type { AppButtonInteraction } from "./types/interaction/button.ts";
+import type { AppModalInteraction } from "./types/interaction/modal.ts";
 
 import "./types/discord.d.ts";
 import type { AppSlashCommand } from "./types/command.ts";
@@ -24,6 +25,11 @@ client.commands = new Collection<string, AppSlashCommand>();
 client.buttonInteractions = new Collection<
 	string | ((customId: string) => boolean),
 	AppButtonInteraction
+>();
+
+client.modalInteractions = new Collection<
+	string | ((customId: string) => boolean),
+	AppModalInteraction
 >();
 
 /**
@@ -73,8 +79,37 @@ async function loadButtonInteractions() {
 	}
 }
 
+/**
+ * Load modal interactions from the interactions directory.
+ */
+async function loadModalInteractions() {
+	const interactionsPath = join(__dirname, "interactions", "modals");
+
+	if (!existsSync(interactionsPath)) {
+		return;
+	}
+
+	const interactionFiles = readdirSync(interactionsPath).filter(
+		(file) => file.endsWith(".ts") || file.endsWith(".js"),
+	);
+
+	for (const file of interactionFiles) {
+		const filePath = join(interactionsPath, file);
+		const interactionFile = await import(filePath);
+		if ("interaction" in interactionFile) {
+			const interaction = interactionFile.interaction as AppModalInteraction;
+			client.modalInteractions.set(interaction.customId, interaction);
+		} else {
+			console.log(
+				`[WARNING] The interaction at ${filePath} is missing a required "interaction" property.`,
+			);
+		}
+	}
+}
+
 await loadCommands();
 await loadButtonInteractions();
+await loadModalInteractions();
 
 /**
  * Get a formatted error message for Discord.
@@ -147,6 +182,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
 			await handler.execute(interaction);
 		} catch (error) {
 			console.error(`Error executing button interaction:`, error);
+			const errorMessage = getErrorMessage(error);
+			if (interaction.replied || interaction.deferred) {
+				await interaction.followUp(errorMessage);
+			} else {
+				await interaction.reply(errorMessage);
+			}
+		}
+	} else if (interaction.isModalSubmit()) {
+		const handler = client.modalInteractions.find((handler) => {
+			const customId = handler.customId;
+			if (typeof customId === "string") {
+				return interaction.customId === customId;
+			} else {
+				return customId(interaction.customId);
+			}
+		});
+
+		if (!handler) {
+			console.error(
+				`No modal interaction handler found for customId: ${interaction.customId}`,
+			);
+			return;
+		}
+
+		try {
+			await handler.execute(interaction);
+		} catch (error) {
+			console.error(`Error executing modal interaction:`, error);
 			const errorMessage = getErrorMessage(error);
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp(errorMessage);

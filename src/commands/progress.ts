@@ -7,9 +7,7 @@ import {
 	MediaGalleryBuilder,
 	MediaGalleryItemBuilder,
 	MessageFlags,
-	SelectMenuBuilder,
 	SlashCommandBuilder,
-	StringSelectMenuBuilder,
 	TextDisplayBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
@@ -116,6 +114,11 @@ export function getProgressTrackComponents(
 		.setStyle(ButtonStyle.Primary)
 		.setDisabled(currentTickCount <= 0);
 
+	const editButton = new ButtonBuilder()
+		.setCustomId(`progress_edit:${encodedTitle}:${rank}:${currentTickCount}`)
+		.setEmoji("✏️")
+		.setStyle(ButtonStyle.Secondary);
+
 	return [
 		new TextDisplayBuilder().setContent(`## ${title}`).toJSON(),
 		new MediaGalleryBuilder()
@@ -126,6 +129,8 @@ export function getProgressTrackComponents(
 			)
 			.toJSON(),
 		new TextDisplayBuilder().setContent(`-# **Rank**: ${rank}`).toJSON(),
-		new ActionRowBuilder().addComponents(removeButton, markButton).toJSON(),
+		new ActionRowBuilder()
+			.addComponents(removeButton, markButton, editButton)
+			.toJSON(),
 	];
 }
