@@ -30,11 +30,11 @@ const rollableItems = collectRollableItems(starforged["Oracle Categories"]);
 export const command: AppSlashCommand = {
 	data: new SlashCommandBuilder()
 		.setName("oracle")
-		.setDescription("Roll on an oracle table or entire category.")
+		.setDescription("Roll on one or multiple oracle tables.")
 		.addStringOption((option) =>
 			option
 				.setName("table")
-				.setDescription("The name of the oracle table or category to roll on")
+				.setDescription("The name of the oracle table(s) to roll on.")
 				.setRequired(true)
 				.setAutocomplete(true),
 		)

@@ -314,10 +314,7 @@ function collectFromOracle(
 /**
  * Helper to find an item in an oracle tree.
  */
-function findInOracleTree(
-	oracle: IOracle,
-	id: string,
-): IOracle | null {
+function findInOracleTree(oracle: IOracle, id: string): IOracle | null {
 	if (oracle.$id === id) {
 		return oracle;
 	}
