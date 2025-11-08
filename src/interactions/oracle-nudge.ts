@@ -1,4 +1,4 @@
-import type { ButtonInteraction } from "discord.js";
+import { type ButtonInteraction, MessageFlags } from "discord.js";
 import { getRollResponse } from "../commands/oracle.js";
 import type { ButtonInteractionHandler } from "../types/interaction.js";
 
@@ -9,13 +9,10 @@ export const handler: ButtonInteractionHandler = {
 		const itemId = parts[1] as string;
 		const targetRowIndex = Number.parseInt(parts[2] as string, 10);
 
-		const { content, components } = await getRollResponse(
-			itemId,
-			targetRowIndex,
-		);
+		const components = await getRollResponse(itemId, targetRowIndex);
 		await interaction.update({
-			content,
 			components,
+			flags: MessageFlags.IsComponentsV2,
 		});
 	},
 };

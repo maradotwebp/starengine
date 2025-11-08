@@ -1,4 +1,4 @@
-import type { ButtonInteraction } from "discord.js";
+import { type ButtonInteraction, MessageFlags } from "discord.js";
 import { getRollResponse } from "../commands/oracle.js";
 import type { ButtonInteractionHandler } from "../types/interaction.js";
 
@@ -7,10 +7,10 @@ export const handler: ButtonInteractionHandler = {
 	execute: async (interaction: ButtonInteraction) => {
 		const itemId = interaction.customId.replace("oracle_reroll:", "");
 
-		const { content, components } = await getRollResponse(itemId);
+		const components = await getRollResponse(itemId);
 		await interaction.update({
-			content,
 			components,
+			flags: MessageFlags.IsComponentsV2,
 		});
 	},
 };

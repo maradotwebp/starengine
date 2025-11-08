@@ -1,6 +1,7 @@
 import { starforged } from "dataforged";
 import {
 	ActionRowBuilder,
+	type APIMessageTopLevelComponent,
 	type AutocompleteInteraction,
 	ButtonBuilder,
 	ButtonStyle,
@@ -10,6 +11,7 @@ import {
 	SlashCommandBuilder,
 	TextDisplayBuilder,
 	ThumbnailBuilder,
+	type TopLevelComponentData,
 } from "discord.js";
 import { formatOracleRoll, formatOracleRollAsList } from "../utils/format.js";
 import {
@@ -64,7 +66,7 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
 export async function getRollResponse(
 	itemId: string,
 	rowIndex?: number,
-): Promise<{ content: string; components: ActionRowBuilder<ButtonBuilder>[] }> {
+): Promise<(TopLevelComponentData | APIMessageTopLevelComponent)[]> {
 	const item = findRollableItemById(starforged["Oracle Categories"], itemId);
 	if (!item) {
 		throw new Error("Rollable item not found");
@@ -120,17 +122,10 @@ export async function getRollResponse(
 		.setEmoji("🔄")
 		.setStyle(ButtonStyle.Secondary);
 
-	const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-		addButton,
-		nudgeUpButton,
-		nudgeDownButton,
-		rerollButton,
-	);
-
-	return {
-		content: response,
-		components: [actionRow],
-	};
+	return [
+		new TextDisplayBuilder().setContent(response).toJSON(),
+		new ActionRowBuilder<ButtonBuilder>().addComponents(addButton, nudgeUpButton, nudgeDownButton, rerollButton).toJSON(),
+	];
 }
 
 async function handleRoll(
@@ -142,10 +137,10 @@ async function handleRoll(
 
 	// If it has a table, use interactive response
 	if (hasTable) {
-		const { content, components } = await getRollResponse(item.$id);
+		const components = await getRollResponse(item.$id);
 		await interaction.reply({
-			content,
 			components,
+			flags: MessageFlags.IsComponentsV2,
 		});
 		return;
 	}

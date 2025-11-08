@@ -21,7 +21,7 @@ export interface CollectedRollableItem {
 
 /**
  * Result from rolling a rollable item.
- * 
+ *
  * For items with tables: roll and result are present.
  * For container items (categories/oracles without tables): roll and result are undefined, only nestedRolls present.
  */
@@ -39,7 +39,7 @@ export interface RollResult {
 /**
  * Checks if an item is rollable (has a table or rollable children).
  */
-function isRollable(item: RollableItem): boolean {
+export function isRollable(item: RollableItem): boolean {
 	// Has a table
 	if ("Table" in item && item.Table && item.Table.length > 0) {
 		return true;
@@ -315,10 +315,12 @@ export function rollItem(
 	}
 
 	// Return as container result to preserve grouping
-	return [{
-		item,
-		nestedRolls,
-	}];
+	return [
+		{
+			item,
+			nestedRolls,
+		},
+	];
 }
 
 /**

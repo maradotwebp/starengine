@@ -11,7 +11,7 @@ export function formatOracleRoll({
 }: RollResult): string {
 	// Container result (oracle/category without table)
 	if (!roll || !result) {
-		let response = '';
+		let response = "";
 		if (nestedRolls) {
 			for (const nested of nestedRolls) {
 				response += formatOracleRollAsList(nested);
@@ -45,11 +45,11 @@ export function formatOracleRollAsList(
 	root: boolean = true,
 ): string {
 	const indent = "  ".repeat(indentLevel);
-	
+
 	// Container result (oracle/category without table) - only show nested rolls with label
 	if (!roll || !result) {
-		if(root) {
-			let response = '';
+		if (root) {
+			let response = "";
 			if (nestedRolls) {
 				for (const nested of nestedRolls) {
 					response += formatOracleRollAsList(nested, 0, false);
@@ -66,7 +66,6 @@ export function formatOracleRollAsList(
 			}
 			return response;
 		}
-		
 	}
 
 	// Normal table roll
