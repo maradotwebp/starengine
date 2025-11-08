@@ -100,7 +100,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		try {
 			await command.execute(interaction);
 		} catch (error) {
-			console.error(`Error executing button interaction:`, error);
+			console.error(`Error executing command:`, error);
 			const errorMessage = getErrorMessage(error);
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp(errorMessage);
