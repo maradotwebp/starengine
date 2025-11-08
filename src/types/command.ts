@@ -1,14 +1,14 @@
 import type {
 	AutocompleteInteraction,
 	ChatInputCommandInteraction,
-	SlashCommandBuilder,
+	RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
 
-export interface SlashCommand {
+export interface AppSlashCommand {
 	/**
 	 * The data for the slash command.
 	 */
-	data: SlashCommandBuilder;
+	data: RESTPostAPIChatInputApplicationCommandsJSONBody;
 	/**
 	 * The function to execute when the slash command is triggered.
 	 */

@@ -9,21 +9,21 @@ import {
 	REST,
 	Routes,
 } from "discord.js";
-import type { ButtonInteractionHandler } from "./types/interaction";
+import type { AppButtonInteraction } from "./types/interaction";
 
 import "./types/discord.d.ts";
-import type { SlashCommand } from "./types/command.ts";
+import type { AppSlashCommand } from "./types/command.ts";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-client.commands = new Collection<string, SlashCommand>();
+client.commands = new Collection<string, AppSlashCommand>();
 
 client.buttonInteractions = new Collection<
 	string | ((customId: string) => boolean),
-	ButtonInteractionHandler
+	AppButtonInteraction
 >();
 
 /**
@@ -37,12 +37,13 @@ async function loadCommands() {
 
 	for (const file of commandFiles) {
 		const filePath = join(commandsPath, file);
-		const command = await import(filePath);
-		if ("data" in command && "execute" in command) {
+		const module = await import(filePath);
+		if ("command" in module) {
+			const command = module.command as AppSlashCommand;
 			client.commands.set(command.data.name, command);
 		} else {
 			console.log(
-				`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+				`[WARNING] The command at ${filePath} is missing a required "command" property.`,
 			);
 		}
 	}
@@ -60,13 +61,13 @@ async function loadButtonInteractions() {
 
 	for (const file of interactionFiles) {
 		const filePath = join(interactionsPath, file);
-		const interaction = await import(filePath);
-		if ("handler" in interaction) {
-			const handler = interaction.handler as ButtonInteractionHandler;
-			client.buttonInteractions.set(handler.customId, handler);
+		const interactionFile = await import(filePath);
+		if ("interaction" in interactionFile) {
+			const interaction = interactionFile.interaction as AppButtonInteraction;
+			client.buttonInteractions.set(interaction.customId, interaction);
 		} else {
 			console.log(
-				`[WARNING] The interaction at ${filePath} is missing a required "handler" property.`,
+				`[WARNING] The interaction at ${filePath} is missing a required "interaction" property.`,
 			);
 		}
 	}
@@ -164,8 +165,8 @@ client.once(Events.ClientReady, async (c) => {
 	try {
 		console.log("Started refreshing (/) commands.");
 
-		const commandsData = Array.from(client.commands.values()).map((command) =>
-			command.data.toJSON(),
+		const commandsData = Array.from(client.commands.values()).map(
+			(command) => command.data,
 		);
 
 		/*

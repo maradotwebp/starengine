@@ -13,6 +13,7 @@ import {
 	ThumbnailBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
+import type { AppSlashCommand } from "../types/command.js";
 import { formatOracleRoll, formatOracleRollAsList } from "../utils/format.js";
 import {
 	collectRollableItems,
@@ -24,45 +25,46 @@ import {
 	rollItemAtRow,
 } from "../utils/oracle.js";
 
-export const data = new SlashCommandBuilder()
-	.setName("oracle")
-	.setDescription("Roll on an oracle table or entire category.")
-	.addStringOption((option) =>
-		option
-			.setName("table")
-			.setDescription("The name of the oracle table or category to roll on")
-			.setRequired(true)
-			.setAutocomplete(true),
-	);
-
 const rollableItems = collectRollableItems(starforged["Oracle Categories"]);
 
-export async function execute(interaction: ChatInputCommandInteraction) {
-	const itemId = interaction.options.getString("table", true);
-	const item = findRollableItemById(starforged["Oracle Categories"], itemId);
-
-	if (!item) {
-		throw new Error(`Could not find a rollable item with ID "${itemId}".`);
-	}
-
-	await handleRoll(interaction, item);
-}
-
-export async function autocomplete(interaction: AutocompleteInteraction) {
-	const focusedValue = interaction.options.getFocused();
-
-	const allOptions = rollableItems
-		.map(({ name, path, id }) => ({
-			name: `${path.join("／")}${path.length > 0 ? "／" : ""}${name}`,
-			value: id,
-		}))
-		.filter(({ name }) =>
-			name.toLowerCase().includes(focusedValue.toLowerCase()),
+export const command: AppSlashCommand = {
+	data: new SlashCommandBuilder()
+		.setName("oracle")
+		.setDescription("Roll on an oracle table or entire category.")
+		.addStringOption((option) =>
+			option
+				.setName("table")
+				.setDescription("The name of the oracle table or category to roll on")
+				.setRequired(true)
+				.setAutocomplete(true),
 		)
-		.slice(0, 25);
+		.toJSON(),
+	execute: async (interaction: ChatInputCommandInteraction) => {
+		const itemId = interaction.options.getString("table", true);
+		const item = findRollableItemById(starforged["Oracle Categories"], itemId);
 
-	await interaction.respond(allOptions);
-}
+		if (!item) {
+			throw new Error(`Could not find a rollable item with ID "${itemId}".`);
+		}
+
+		await handleRoll(interaction, item);
+	},
+	autocomplete: async (interaction: AutocompleteInteraction) => {
+		const focusedValue = interaction.options.getFocused();
+
+		const allOptions = rollableItems
+			.map(({ name, path, id }) => ({
+				name: `${path.join("／")}${path.length > 0 ? "／" : ""}${name}`,
+				value: id,
+			}))
+			.filter(({ name }) =>
+				name.toLowerCase().includes(focusedValue.toLowerCase()),
+			)
+			.slice(0, 25);
+
+		await interaction.respond(allOptions);
+	},
+};
 
 /**
  * Get the Discord component response for an oracle roll.

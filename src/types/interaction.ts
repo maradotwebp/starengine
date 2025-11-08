@@ -1,6 +1,6 @@
 import type { ButtonInteraction } from "discord.js";
 
-export interface ButtonInteractionHandler {
+export interface AppButtonInteraction {
 	/**
 	 * The custom ID of the button interaction.
 	 *
