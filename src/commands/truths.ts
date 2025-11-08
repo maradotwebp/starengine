@@ -60,12 +60,15 @@ export const command: AppSlashCommand = {
 export function getTruthComponents(
 	truth: ISettingTruth,
 	truthContent: string,
+	additionalButtons: ButtonBuilder[] = [],
 ): (TopLevelComponentData | APIMessageTopLevelComponent)[] {
 	const iconUrl = getTruthIconUrl(truth);
 	const truthName = truth.Display.Title;
 
 	const content = new TextDisplayBuilder().setContent(
-		[`## ${truth.Display.Title}`, truthContent, `-# > ${truth.Character}`].join("\n"),
+		[`## ${truth.Display.Title}`, truthContent, `-# > ${truth.Character}`].join(
+			"\n",
+		),
 	);
 
 	const section = new SectionBuilder().addTextDisplayComponents(content);
@@ -82,7 +85,9 @@ export function getTruthComponents(
 		.setLabel("Edit")
 		.setStyle(ButtonStyle.Secondary);
 
-	const buttonRow = new ActionRowBuilder().addComponents(editButton).toJSON();
+	const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+		.addComponents(editButton, ...additionalButtons)
+		.toJSON();
 
 	return [section.toJSON(), buttonRow];
 }
