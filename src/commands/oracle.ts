@@ -211,7 +211,7 @@ function getIconHrefs(item: RollableItem): string[] {
 			),
 		) ?? []),
 		item.Display.Icon?.replace(
-			"../../img/vector/",
+			/\.\.\/\.\.\/img\/vector\/(Oracles)?/,
 			"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/Oracles/",
 		).replace(".svg", ".png"),
 	].filter((href) => href !== undefined);
