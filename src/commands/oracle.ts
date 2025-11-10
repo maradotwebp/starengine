@@ -72,9 +72,6 @@ export const command: AppSlashCommand = {
 	},
 };
 
-/**
- * Get the Discord component response for an oracle roll.
- */
 export async function getRollResponse(
 	itemId: string,
 	rowIndex?: number,
@@ -105,7 +102,8 @@ export async function getRollResponse(
 	const addButton = new ButtonBuilder()
 		.setCustomId(encodeCustomId(oracleNewSchema, { itemId }))
 		.setEmoji("➕")
-		.setStyle(ButtonStyle.Primary);
+		.setStyle(ButtonStyle.Primary)
+		.setDisabled(!(item.Usage?.["Max rolls"] || item.Usage?.Repeatable));
 
 	const rerollButton = new ButtonBuilder()
 		.setCustomId(encodeCustomId(oracleRerollSchema, { itemId }))

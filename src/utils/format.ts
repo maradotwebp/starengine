@@ -1,3 +1,4 @@
+import type { IOracleUsage } from "dataforged";
 import type { RollResult } from "./oracle";
 
 /**
@@ -28,7 +29,7 @@ export function formatOracleRoll({
 	if (result.Summary) {
 		response += `${result.Summary}\n`;
 	}
-	response += `-# \`→ ${roll}\` ◇ ${item.Display.Title}\n`;
+	response += `-# \`→ ${roll}\` ◇ ${item.Display.Title} ${formatUsage(item.Usage)}\n`;
 
 	if (nestedRolls) {
 		for (const nested of nestedRolls) {
@@ -62,7 +63,7 @@ export function formatOracleRollAsList(
 					response += formatOracleRollAsList(nested, 0, false);
 				}
 			}
-			response += `-# ◇ ${item.Display.Title}\n`;
+			response += `-# ◇ ${item.Display.Title} ${formatUsage(item.Usage)}\n`;
 			return response;
 		} else {
 			let response = `${indent}- *${item.Display.Title}*\n`;
@@ -79,7 +80,7 @@ export function formatOracleRollAsList(
 	if (result.Summary) {
 		response += `${indent}  -# ${result.Summary}\n`;
 	}
-	response += `${indent}  -# \`→ ${roll}\` ◇ ${item.Display.Title}\n`;
+	response += `${indent}  -# \`→ ${roll}\` ◇ ${item.Display.Title} ${formatUsage(item.Usage)}\n`;
 
 	if (nestedRolls) {
 		for (const nested of nestedRolls) {
@@ -101,4 +102,9 @@ export function formatOracleRollAsList(
  */
 export function sanitizeResult(text: string): string {
 	return text.replace(/\[(?:⏵)?([^\]]+)\]\([^/]+\/([^)]+)\)/g, "*$1*");
+}
+
+function formatUsage(usage: IOracleUsage|undefined): string {
+	const maxRolls = usage?.["Max rolls"];
+	return maxRolls ? `**(🗘 1 - ${maxRolls})**` : "";
 }
