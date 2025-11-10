@@ -57,12 +57,14 @@ export const command: AppSlashCommand = {
 		const focusedValue = interaction.options.getFocused();
 
 		const allOptions = rollableItems
-			.map(({ name, path, id }) => ({
+			.map(({ name, path, aliases, id }) => ({
 				name: `${path.join("／")}${path.length > 0 ? "／" : ""}${name}`,
+				aliases: aliases,
 				value: id,
 			}))
-			.filter(({ name }) =>
-				name.toLowerCase().includes(focusedValue.toLowerCase()),
+			.filter(({ name, aliases }) =>
+				name.toLowerCase().includes(focusedValue.toLowerCase()) ||
+				aliases.some((alias) => alias.toLowerCase().includes(focusedValue.toLowerCase())),
 			)
 			.slice(0, 25);
 

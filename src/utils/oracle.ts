@@ -10,6 +10,10 @@ export type RollableItem = IOracle | IOracleCategory;
  */
 export interface CollectedRollableItem {
 	name: string;
+	/**
+	 * Alternate names for the item, including: names it had earlier in development that have since changed, alternate spellings/punctuation, common misspellings, and so on.
+	 */
+	aliases: string[];
 	path: string[];
 	id: string;
 }
@@ -85,6 +89,7 @@ export function collectRollableItems(
 		if (isRollable(category)) {
 			items.push({
 				name: category.Display.Title,
+				aliases: category.Aliases ?? [],
 				path: [...path],
 				id: category.$id,
 			});
@@ -285,19 +290,10 @@ function collectFromOracle(
 	if (isRollable(oracle)) {
 		items.push({
 			name: oracle.Display.Title,
+			aliases: oracle.Aliases ?? [],
 			path: [...path],
 			id: oracle.$id,
 		});
-
-		if (oracle.Aliases) {
-			for (const alias of oracle.Aliases) {
-				items.push({
-					name: alias,
-					path: [...path],
-					id: oracle.$id,
-				});
-			}
-		}
 	}
 
 	if (oracle.Oracles) {
