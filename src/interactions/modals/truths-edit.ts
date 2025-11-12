@@ -50,7 +50,8 @@ export const interaction: AppModalInteraction = {
 
 		let selectedOption: ISettingTruthOption | undefined;
 		if (selectedOptionId === "random") {
-			selectedOption = truth.Table[Math.floor(Math.random() * truth.Table.length)];
+			selectedOption =
+				truth.Table[Math.floor(Math.random() * truth.Table.length)];
 		} else {
 			selectedOption = findTruthOptionById(truth, selectedOptionId);
 		}

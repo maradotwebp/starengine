@@ -18,7 +18,10 @@ export const truthsRerollSchema: CustomIdSchema<
 		const partialOptionId = optionId.replace(truthId, "");
 		return [truthId, partialOptionId];
 	},
-	decode: ([truthId, partialOptionId]) => ({ truthId, optionId: `${truthId}${partialOptionId}` }),
+	decode: ([truthId, partialOptionId]) => ({
+		truthId,
+		optionId: `${truthId}${partialOptionId}`,
+	}),
 };
 
 export const interaction: AppButtonInteraction = {

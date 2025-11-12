@@ -62,9 +62,12 @@ export const command: AppSlashCommand = {
 				aliases: aliases,
 				value: id,
 			}))
-			.filter(({ name, aliases }) =>
-				name.toLowerCase().includes(focusedValue.toLowerCase()) ||
-				aliases.some((alias) => alias.toLowerCase().includes(focusedValue.toLowerCase())),
+			.filter(
+				({ name, aliases }) =>
+					name.toLowerCase().includes(focusedValue.toLowerCase()) ||
+					aliases.some((alias) =>
+						alias.toLowerCase().includes(focusedValue.toLowerCase()),
+					),
 			)
 			.slice(0, 25);
 
