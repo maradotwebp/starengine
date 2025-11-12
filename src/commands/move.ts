@@ -20,11 +20,11 @@ const allMoves = collectMoves(starforged["Move Categories"]);
 export const command: AppSlashCommand = {
 	data: new SlashCommandBuilder()
 		.setName("move")
-		.setDescription("Display a Starforged move.")
+		.setDescription("Execute a move.")
 		.addStringOption((option) =>
 			option
 				.setName("name")
-				.setDescription("The name of the move to display.")
+				.setDescription("The name of the move.")
 				.setRequired(true)
 				.setAutocomplete(true),
 		)
