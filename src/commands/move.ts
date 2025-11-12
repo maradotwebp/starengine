@@ -1,12 +1,17 @@
 import { starforged } from "dataforged";
 import {
+	ActionRowBuilder,
 	type AutocompleteInteraction,
+	ButtonBuilder,
+	ButtonStyle,
 	type ChatInputCommandInteraction,
 	MessageFlags,
 	SlashCommandBuilder,
 	TextDisplayBuilder,
 } from "discord.js";
+import { moveOracleRollSchema } from "../interactions/buttons/move-oracle-roll.js";
 import type { AppSlashCommand } from "../types/command.js";
+import { encodeCustomId } from "../utils/custom-id.js";
 import { formatMove } from "../utils/format.js";
 import { collectMoves, findMoveById } from "../utils/move.js";
 
@@ -35,8 +40,26 @@ export const command: AppSlashCommand = {
 		const formattedMove = formatMove(move);
 		const content = new TextDisplayBuilder().setContent(formattedMove);
 
+		console.log(move.Oracles);
+
 		await interaction.reply({
-			components: [content.toJSON()],
+			components: [
+				content.toJSON(),
+				new ActionRowBuilder<ButtonBuilder>()
+					.addComponents(
+						new ButtonBuilder()
+							.setCustomId(
+								encodeCustomId(moveOracleRollSchema, {
+									moveId: move.$id,
+								}),
+							)
+							.setDisabled((move.Oracles?.length ?? 0) === 0)
+							.setEmoji("🔮")
+							.setLabel("Roll on table")
+							.setStyle(ButtonStyle.Secondary),
+					)
+					.toJSON(),
+			],
 			flags: MessageFlags.IsComponentsV2,
 		});
 	},
