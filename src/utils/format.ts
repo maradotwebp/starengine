@@ -1,4 +1,4 @@
-import type { IOracleUsage } from "dataforged";
+import type { IMove, IOracleUsage } from "dataforged";
 import type { RollResult } from "./oracle";
 
 /**
@@ -25,7 +25,7 @@ export function formatOracleRoll({
 		return response;
 	}
 
-	let response = `## 🔮 ${sanitizeResult(result.Result)}\n`;
+	let response = `## 🔮 ${sanitizeText(result.Result)}\n`;
 	if (result.Summary) {
 		response += `${result.Summary}\n`;
 	}
@@ -76,7 +76,7 @@ export function formatOracleRollAsList(
 		}
 	}
 
-	let response = `${indent}- **${item.Name}**: ${sanitizeResult(result.Result)}\n`;
+	let response = `${indent}- **${item.Name}**: ${sanitizeText(result.Result)}\n`;
 	if (result.Summary) {
 		response += `${indent}  -# ${result.Summary}\n`;
 	}
@@ -91,20 +91,34 @@ export function formatOracleRollAsList(
 	return response;
 }
 
+function formatUsage(usage: IOracleUsage | undefined): string {
+	const maxRolls = usage?.["Max rolls"];
+	return maxRolls ? `**(🗘 1 - ${maxRolls})**` : "";
+}
+
 /**
- * Sanitize a result string to remove the link to the oracle.
+ * Format a move for display in Discord.
  *
- * The dataforged library uses links to other oracles in the result string. This function removes those links.
+ * @example
+ * const formatted = formatMove(move);
+ * // Returns markdown formatted string with title and description
+ */
+export function formatMove(move: IMove): string {
+	return [
+		`# ${move.Display.Title}`,
+		move.Text ? `\n${sanitizeText(move.Text.replaceAll("\n\n", "\n"))}` : "",
+	].join("\n");
+}
+
+/**
+ * Sanitize a string to remove links to other items.
+ *
+ * The dataforged library uses links to other items in the string. This function removes those links.
  *
  * @example
  * const sanitized = sanitizeResult("[Action](Starforged/Oracles/Action)");
  * console.log(sanitized); // "*Action*"
  */
-export function sanitizeResult(text: string): string {
+export function sanitizeText(text: string): string {
 	return text.replace(/\[(?:⏵)?([^\]]+)\]\([^/]+\/([^)]+)\)/g, "*$1*");
-}
-
-function formatUsage(usage: IOracleUsage|undefined): string {
-	const maxRolls = usage?.["Max rolls"];
-	return maxRolls ? `**(🗘 1 - ${maxRolls})**` : "";
 }
