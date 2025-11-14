@@ -1,8 +1,10 @@
 import { starforged } from "dataforged";
 import {
 	MessageFlags,
-	TextDisplayBuilder,
 	type ModalSubmitInteraction,
+	SectionBuilder,
+	TextDisplayBuilder,
+	ThumbnailBuilder,
 } from "discord.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
 import type { CustomIdSchema } from "../../utils/custom-id.js";
@@ -55,12 +57,9 @@ export const interaction: AppModalInteraction = {
 		// Validate bonus value
 		const bonus = bonusInput ? Number.parseInt(bonusInput, 10) : 0;
 		if (Number.isNaN(bonus)) {
-			await interaction.reply({
-				content: `Invalid bonus value: "${bonusInput}". Please enter a number.`,
-				ephemeral: true,
-				flags: MessageFlags.Ephemeral,
-			});
-			return;
+			throw new Error(
+				`Invalid bonus value: "${bonusInput}". Please enter a number.`,
+			);
 		}
 
 		// Perform the action roll
@@ -69,9 +68,23 @@ export const interaction: AppModalInteraction = {
 		// Format and send the result
 		const formattedResult = formatActionRollResult(move, rollResult);
 
+		const icon = {
+			"Strong Hit":
+				"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-strong-hit.png",
+			"Weak Hit":
+				"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-weak-hit.png",
+			Miss: "https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-miss.png",
+		}[rollResult.outcome];
+
 		await interaction.reply({
 			components: [
-				new TextDisplayBuilder().setContent(formattedResult).toJSON(),
+				new SectionBuilder()
+					.addTextDisplayComponents(
+						new TextDisplayBuilder().setContent(formattedResult),
+					)
+					.setThumbnailAccessory(
+						new ThumbnailBuilder().setURL(icon),
+					),
 			],
 			flags: MessageFlags.IsComponentsV2,
 		});
