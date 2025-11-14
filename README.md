@@ -1,15 +1,18 @@
-# forgebound
+# starengine
 
-To install dependencies:
+## Development Commands
 
 ```bash
+# Install dependencies
 bun install
-```
-
-To run:
-
-```bash
+# Run in development mode with auto-reload
 bun run dev
+# Run in production mode
+bun run start
+# Run all tests
+bun test
+# Run specific test file
+bun test src/core/custom-id.test.ts
+# Lint and format code
+bunx @biomejs/biome check --write
 ```
-
-This project was created using `bun init` in bun v1.2.22. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
