@@ -1,5 +1,4 @@
-import type { ISettingTruth, ISettingTruthOption } from "dataforged";
-import { starforged } from "dataforged";
+import type { ISettingTruthOption } from "dataforged";
 import {
 	type ButtonInteraction,
 	LabelBuilder,
@@ -14,6 +13,7 @@ import {
 	encodeCustomId,
 	matchesCustomId,
 } from "@/core/custom-id.js";
+import { findTruthById } from "@/core/truths.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import { truthsEditSchema } from "../modals/truths-edit.js";
 
@@ -35,30 +35,10 @@ export const interaction: AppButtonInteraction = {
 			interaction.customId,
 		);
 
-		// Find the truth by ID
-		const truths = starforged["Setting Truths"];
-		if (!truths) {
-			throw new Error("No setting truths found.");
-		}
-
-		const truth = truths.find((t) => t?.$id === truthId) as
-			| ISettingTruth
-			| undefined;
-
+		const truth = findTruthById(truthId);
 		if (!truth) {
 			throw new Error(`Truth not found with ID: ${truthId}`);
 		}
-
-		const formatOptionTitle = (option: ISettingTruthOption): string => {
-			if (option.Display?.Title) {
-				return option.Display.Title;
-			}
-			const description = option.Description;
-			if (description.length >= 100) {
-				return `${description.slice(0, 50)}...`;
-			}
-			return description;
-		};
 
 		const modal = new ModalBuilder()
 			.setCustomId(encodeCustomId(truthsEditSchema, { truthId }))
@@ -99,3 +79,14 @@ export const interaction: AppButtonInteraction = {
 		await interaction.showModal(modal);
 	},
 };
+
+function formatOptionTitle(option: ISettingTruthOption): string {
+	if (option.Display?.Title) {
+		return option.Display.Title;
+	}
+	const description = option.Description;
+	if (description.length >= 100) {
+		return `${description.slice(0, 50)}...`;
+	}
+	return description;
+}

@@ -1,13 +1,12 @@
-import { starforged } from "dataforged";
 import { type ButtonInteraction, MessageFlags } from "discord.js";
+import { TruthWidget } from "@/core/components/truth-widget.js";
 import {
 	type CustomIdSchema,
 	decodeCustomId,
 	matchesCustomId,
 } from "@/core/custom-id.js";
+import { findTruthById, findTruthOptionById } from "@/core/truths.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
-import { findTruthById, findTruthOptionById } from "../../utils/truths.js";
-import { createTruthComponents } from "../modals/truths-edit.js";
 
 export const truthsRerollSchema: CustomIdSchema<
 	{ truthId: string; optionId: string },
@@ -32,22 +31,21 @@ export const interaction: AppButtonInteraction = {
 			interaction.customId,
 		);
 
-		const truth = findTruthById(starforged["Setting Truths"], truthId);
+		const truth = findTruthById(truthId);
 		if (!truth) {
 			throw new Error(`Truth not found with ID: ${truthId}`);
 		}
 
-		const selectedOption = findTruthOptionById(truth, optionId);
+		const selectedOption = findTruthOptionById(optionId, truth);
 		if (!selectedOption) {
 			throw new Error(`Option not found with ID: ${optionId}`);
 		}
 
-		const components = createTruthComponents(truth, {
-			selectedOption,
-		});
-
 		await interaction.update({
-			components,
+			components: TruthWidget({
+				truth,
+				content: selectedOption,
+			}),
 			flags: MessageFlags.IsComponentsV2,
 		});
 	},

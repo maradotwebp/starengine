@@ -1,18 +1,18 @@
 import type { IDisplay } from "dataforged";
 
 /**
- * Returns one random icon href for the given display.
+ * Returns one random icon href for the given oracle display.
  */
-export function getIconHref(display: IDisplay): string | undefined {
-	return getIconHrefs(display)[
-		Math.floor(Math.random() * getIconHrefs(display).length)
+export function getOracleIconHref(display: IDisplay): string | undefined {
+	return getOracleIconHrefs(display)[
+		Math.floor(Math.random() * getOracleIconHrefs(display).length)
 	];
 }
 
 /**
- * Returns all valid icon hrefs for the given display.
+ * Returns all valid icon hrefs for the given oracle display.
  */
-function getIconHrefs(display: IDisplay): string[] {
+function getOracleIconHrefs(display: IDisplay): string[] {
 	return [
 		...(display.Images?.map((image) =>
 			image.replace(

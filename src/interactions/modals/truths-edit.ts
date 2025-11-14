@@ -1,23 +1,13 @@
-import type { IRow, ISettingTruth, ISettingTruthOption } from "dataforged";
-import { starforged } from "dataforged";
-import {
-	type APIMessageTopLevelComponent,
-	ButtonBuilder,
-	ButtonStyle,
-	MessageFlags,
-	type ModalSubmitInteraction,
-	type TopLevelComponentData,
-} from "discord.js";
+import type { ISettingTruthOption } from "dataforged";
+import { MessageFlags, type ModalSubmitInteraction } from "discord.js";
+import { TruthWidget } from "@/core/components/truth-widget";
 import {
 	type CustomIdSchema,
 	decodeCustomId,
-	encodeCustomId,
 	matchesCustomId,
 } from "@/core/custom-id.js";
+import { findTruthById, findTruthOptionById } from "@/core/truths.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
-import { findTruthById, findTruthOptionById } from "../../utils/truths.js";
-import { truthsRerollSchema } from "../buttons/truths-reroll.js";
-import { getTruthComponents } from "../commands/truths.js";
 
 export const truthsEditSchema: CustomIdSchema<{ truthId: string }, [string]> = {
 	name: "truths_edit",
@@ -30,39 +20,26 @@ export const interaction: AppModalInteraction = {
 	execute: async (interaction: ModalSubmitInteraction) => {
 		const { truthId } = decodeCustomId(truthsEditSchema, interaction.customId);
 
-		// Get the custom truth text or selected table option
-		const customTruth = interaction.fields.getTextInputValue("truth_custom");
+		const customTruth = interaction.fields
+			.getTextInputValue("truth_custom")
+			.trim();
 		const selectedOptionIds =
 			interaction.fields.getStringSelectValues("truth_table");
-		if (selectedOptionIds.length !== 1) {
-			throw new Error("Only one option can be selected");
-		}
 
-		const truth = findTruthById(starforged["Setting Truths"], truthId);
-		if (!truth) {
-			throw new Error(`Truth not found with ID: ${truthId}`);
-		}
+		const truth = findTruthById(truthId);
+		if (!truth) throw new Error(`Truth not found with ID: ${truthId}`);
 
-		const selectedOptionId = selectedOptionIds[0];
-		if (!selectedOptionId) {
-			throw new Error("No option selected");
-		}
-
-		let selectedOption: ISettingTruthOption | undefined;
-		if (selectedOptionId === "random") {
-			selectedOption =
-				truth.Table[Math.floor(Math.random() * truth.Table.length)];
+		let content: ISettingTruthOption | string | undefined;
+		if (customTruth) {
+			content = customTruth;
 		} else {
-			selectedOption = findTruthOptionById(truth, selectedOptionId);
+			const selectedOptionId = selectedOptionIds[0];
+			if (selectedOptionId === "random") {
+				content = truth.Table[Math.floor(Math.random() * truth.Table.length)];
+			} else if (selectedOptionId) {
+				content = findTruthOptionById(selectedOptionId, truth);
+			}
 		}
-		if (!selectedOption) {
-			throw new Error(`Option not found with ID: ${selectedOptionId}`);
-		}
-
-		const components = createTruthComponents(truth, {
-			selectedOption,
-			customTruth,
-		});
 
 		if (!interaction.message) {
 			throw new Error("Cannot edit message: interaction.message is null");
@@ -70,96 +47,11 @@ export const interaction: AppModalInteraction = {
 
 		await interaction.deferUpdate();
 		await interaction.message.edit({
-			components,
+			components: TruthWidget({
+				truth,
+				content,
+			}),
 			flags: MessageFlags.IsComponentsV2,
 		});
 	},
 };
-
-/**
- * Create components for a truth based on its ID and selected option or custom text.
- */
-export function createTruthComponents(
-	truth: ISettingTruth,
-	options: {
-		selectedOption?: ISettingTruthOption;
-		customTruth?: string;
-	},
-): (TopLevelComponentData | APIMessageTopLevelComponent)[] {
-	const { selectedOption, customTruth } = options;
-	let truthContent: string;
-	let components: (TopLevelComponentData | APIMessageTopLevelComponent)[] = [];
-
-	if (customTruth?.trim()) {
-		// Use custom truth text
-		truthContent = customTruth.trim();
-		components = getTruthComponents(truth, truthContent);
-	} else if (selectedOption) {
-		truthContent = formatTruthDescription(selectedOption);
-
-		const additionalButtons: ButtonBuilder[] = [];
-		if (selectedOption.Subtable && selectedOption.Subtable.length > 0) {
-			additionalButtons.push(
-				new ButtonBuilder()
-					.setCustomId(
-						encodeCustomId(truthsRerollSchema, {
-							truthId: truth.$id,
-							optionId: selectedOption.$id,
-						}),
-					)
-					.setEmoji("🔄")
-					.setStyle(ButtonStyle.Secondary),
-			);
-		}
-
-		components = getTruthComponents(truth, truthContent, additionalButtons);
-	} else {
-		// Neither provided, keep the current state
-		truthContent = "*No Option selected yet.*";
-		components = getTruthComponents(truth, truthContent);
-	}
-
-	return components;
-}
-
-/**
- * Format a truth option, rolling on its subtable if available.
- */
-function formatTruthDescription(option: ISettingTruthOption): string {
-	let content = option.Description ?? "";
-
-	// Check if the option has a subtable
-	if (option.Subtable && option.Subtable.length > 0) {
-		const subtableResult = rollOnSubtable(option.Subtable);
-		if (subtableResult) {
-			content += `\n${subtableResult}`;
-		}
-	}
-
-	return content;
-}
-
-/**
- * Roll on a truth option subtable.
- */
-function rollOnSubtable(subtable: IRow[]): string | null {
-	const roll = Math.floor(Math.random() * 100) + 1;
-
-	for (const row of subtable) {
-		const floor = row.Floor ?? 1;
-		const ceiling = row.Ceiling ?? 100;
-
-		if (roll >= floor && roll <= ceiling) {
-			const result = row.Result ?? "";
-			return [
-				`- **${result}**`,
-				row.Summary,
-				`  -# \`→ ${roll}\` ◇ ${row.Display?.Title ?? "Truth"}`,
-			]
-				.filter(Boolean)
-				.join("\n");
-		}
-	}
-
-	return null;
-}
