@@ -6,7 +6,6 @@ import {
 	ModalBuilder,
 	StringSelectMenuBuilder,
 } from "discord.js";
-import { getRollResponse } from "../../commands/oracle.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import {
 	type CustomIdSchema,
@@ -16,6 +15,7 @@ import {
 } from "../../utils/custom-id.js";
 import { findMoveById } from "../../utils/move.js";
 import { findRollableItemById } from "../../utils/oracle.js";
+import { getRollResponse } from "../commands/oracle.js";
 import { moveOracleSelectSchema } from "../modals/move-oracle-select.js";
 
 export const moveOracleRollSchema: CustomIdSchema<

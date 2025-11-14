@@ -13,12 +13,12 @@ import {
 	ThumbnailBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
-import { oracleNewSchema } from "../interactions/buttons/oracle-new.js";
-import { oracleNudgeSchema } from "../interactions/buttons/oracle-nudge.js";
-import { oracleRerollSchema } from "../interactions/buttons/oracle-reroll.js";
-import type { AppSlashCommand } from "../types/command.js";
-import { encodeCustomId } from "../utils/custom-id.js";
-import { formatOracleRoll, formatOracleRollAsList } from "../utils/format.js";
+import type { AppSlashCommand } from "../../types/command.js";
+import { encodeCustomId } from "../../utils/custom-id.js";
+import {
+	formatOracleRoll,
+	formatOracleRollAsList,
+} from "../../utils/format.js";
 import {
 	collectRollableItems,
 	findRollableItemById,
@@ -27,7 +27,10 @@ import {
 	type RollableItem,
 	rollItem,
 	rollItemAtRow,
-} from "../utils/oracle.js";
+} from "../../utils/oracle.js";
+import { oracleNewSchema } from "../buttons/oracle-new.js";
+import { oracleNudgeSchema } from "../buttons/oracle-nudge.js";
+import { oracleRerollSchema } from "../buttons/oracle-reroll.js";
 
 const rollableItems = collectRollableItems(starforged["Oracle Categories"]);
 

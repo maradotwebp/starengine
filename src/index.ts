@@ -36,7 +36,7 @@ client.modalInteractions = new Collection<
  * Load commands from the commands directory.
  */
 async function loadCommands() {
-	const commandsPath = join(__dirname, "commands");
+	const commandsPath = join(__dirname, "interactions", "commands");
 	const commandFiles = readdirSync(commandsPath).filter(
 		(file) => file.endsWith(".ts") || file.endsWith(".js"),
 	);

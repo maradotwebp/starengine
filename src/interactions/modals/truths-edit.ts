@@ -8,7 +8,6 @@ import {
 	type ModalSubmitInteraction,
 	type TopLevelComponentData,
 } from "discord.js";
-import { getTruthComponents } from "../../commands/truths.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
 import {
 	type CustomIdSchema,
@@ -18,6 +17,7 @@ import {
 } from "../../utils/custom-id.js";
 import { findTruthById, findTruthOptionById } from "../../utils/truths.js";
 import { truthsRerollSchema } from "../buttons/truths-reroll.js";
+import { getTruthComponents } from "../commands/truths.js";
 
 export const truthsEditSchema: CustomIdSchema<{ truthId: string }, [string]> = {
 	name: "truths_edit",

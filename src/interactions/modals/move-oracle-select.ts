@@ -1,7 +1,7 @@
 import { MessageFlags, type ModalSubmitInteraction } from "discord.js";
-import { getRollResponse } from "../../commands/oracle.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
 import { type CustomIdSchema, matchesCustomId } from "../../utils/custom-id.js";
+import { getRollResponse } from "../commands/oracle.js";
 
 export const moveOracleSelectSchema: CustomIdSchema<
 	{ moveId: string },

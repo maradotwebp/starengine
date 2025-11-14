@@ -9,12 +9,12 @@ import {
 	SlashCommandBuilder,
 	TextDisplayBuilder,
 } from "discord.js";
-import { moveOracleRollSchema } from "../interactions/buttons/move-oracle-roll.js";
-import { moveRollSchema } from "../interactions/buttons/move-roll.js";
-import type { AppSlashCommand } from "../types/command.js";
-import { encodeCustomId } from "../utils/custom-id.js";
-import { formatMove } from "../utils/format.js";
-import { collectMoves, findMoveById } from "../utils/move.js";
+import type { AppSlashCommand } from "../../types/command.js";
+import { encodeCustomId } from "../../utils/custom-id.js";
+import { formatMove } from "../../utils/format.js";
+import { collectMoves, findMoveById } from "../../utils/move.js";
+import { moveOracleRollSchema } from "../buttons/move-oracle-roll.js";
+import { moveRollSchema } from "../buttons/move-roll.js";
 
 const allMoves = collectMoves(starforged["Move Categories"]);
 

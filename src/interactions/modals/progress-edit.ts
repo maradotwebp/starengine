@@ -1,14 +1,14 @@
 import { MessageFlags, type ModalSubmitInteraction } from "discord.js";
-import {
-	challengeRanks,
-	getProgressTrackComponents,
-} from "../../commands/progress.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
 import {
 	type CustomIdSchema,
 	decodeCustomId,
 	matchesCustomId,
 } from "../../utils/custom-id.js";
+import {
+	challengeRanks,
+	getProgressTrackComponents,
+} from "../commands/progress.js";
 
 export const progressEditSchema: CustomIdSchema<
 	{ title: string; rank: string; currentTickCount: number },

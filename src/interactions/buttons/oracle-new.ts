@@ -1,11 +1,11 @@
 import { type ButtonInteraction, MessageFlags } from "discord.js";
-import { getRollResponse } from "../../commands/oracle.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import {
 	type CustomIdSchema,
 	decodeCustomId,
 	matchesCustomId,
 } from "../../utils/custom-id.js";
+import { getRollResponse } from "../commands/oracle.js";
 
 export const oracleNewSchema: CustomIdSchema<{ itemId: string }, [string]> = {
 	name: "oracle_new",

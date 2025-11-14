@@ -82,9 +82,7 @@ export const interaction: AppModalInteraction = {
 					.addTextDisplayComponents(
 						new TextDisplayBuilder().setContent(formattedResult),
 					)
-					.setThumbnailAccessory(
-						new ThumbnailBuilder().setURL(icon),
-					),
+					.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon)),
 			],
 			flags: MessageFlags.IsComponentsV2,
 		});

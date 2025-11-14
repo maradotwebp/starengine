@@ -6,7 +6,6 @@ import {
 	TextInputBuilder,
 	TextInputStyle,
 } from "discord.js";
-import { challengeRanks } from "../../commands/progress.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import {
 	type CustomIdSchema,
@@ -14,6 +13,7 @@ import {
 	encodeCustomId,
 	matchesCustomId,
 } from "../../utils/custom-id.js";
+import { challengeRanks } from "../commands/progress.js";
 import { progressEditSchema } from "../modals/progress-edit.js";
 
 export const progressEditModalSchema: CustomIdSchema<

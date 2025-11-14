@@ -11,10 +11,10 @@ import {
 	TextDisplayBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
-import { progressEditModalSchema } from "../interactions/buttons/progress-open-edit-modal.js";
-import { progressSetSchema } from "../interactions/buttons/progress-set.js";
-import type { AppSlashCommand } from "../types/command.js";
-import { encodeCustomId } from "../utils/custom-id.js";
+import type { AppSlashCommand } from "../../types/command.js";
+import { encodeCustomId } from "../../utils/custom-id.js";
+import { progressEditModalSchema } from "../buttons/progress-open-edit-modal.js";
+import { progressSetSchema } from "../buttons/progress-set.js";
 
 interface ChallengeRank {
 	/**
