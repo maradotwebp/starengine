@@ -10,6 +10,7 @@ import {
 	TextDisplayBuilder,
 } from "discord.js";
 import { moveOracleRollSchema } from "../interactions/buttons/move-oracle-roll.js";
+import { moveRollSchema } from "../interactions/buttons/move-roll.js";
 import type { AppSlashCommand } from "../types/command.js";
 import { encodeCustomId } from "../utils/custom-id.js";
 import { formatMove } from "../utils/format.js";
@@ -47,6 +48,15 @@ export const command: AppSlashCommand = {
 				content.toJSON(),
 				new ActionRowBuilder<ButtonBuilder>()
 					.addComponents(
+						new ButtonBuilder()
+							.setCustomId(
+								encodeCustomId(moveRollSchema, {
+									moveId: move.$id,
+								}),
+							)
+							.setDisabled(!move.Outcomes)
+							.setEmoji("🎲")
+							.setStyle(ButtonStyle.Primary),
 						new ButtonBuilder()
 							.setCustomId(
 								encodeCustomId(moveOracleRollSchema, {
