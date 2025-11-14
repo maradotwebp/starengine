@@ -20,3 +20,4 @@ This project is a Discord bot that allows for play-by-post on Discord for the Ir
     4. Internal types
     5. Exported functions
     6. Internal functions
+- Use `throw` during commands and interactions instead of replying directly. Errors will be caught by the command handler in `index.ts`.
