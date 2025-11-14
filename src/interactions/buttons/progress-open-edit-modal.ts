@@ -6,13 +6,13 @@ import {
 	TextInputBuilder,
 	TextInputStyle,
 } from "discord.js";
-import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import {
 	type CustomIdSchema,
 	decodeCustomId,
 	encodeCustomId,
 	matchesCustomId,
-} from "../../utils/custom-id.js";
+} from "@/core/custom-id.js";
+import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import { challengeRanks } from "../commands/progress.js";
 import { progressEditSchema } from "../modals/progress-edit.js";
 

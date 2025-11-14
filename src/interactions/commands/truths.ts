@@ -13,8 +13,8 @@ import {
 	ThumbnailBuilder,
 	type TopLevelComponentData,
 } from "discord.js";
+import { encodeCustomId } from "@/core/custom-id.js";
 import type { AppSlashCommand } from "../../types/command.js";
-import { encodeCustomId } from "../../utils/custom-id.js";
 import { truthsOpenEditModalSchema } from "../buttons/truths-open-edit-modal.js";
 
 export const command: AppSlashCommand = {

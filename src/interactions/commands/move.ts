@@ -9,8 +9,8 @@ import {
 	SlashCommandBuilder,
 	TextDisplayBuilder,
 } from "discord.js";
+import { encodeCustomId } from "@/core/custom-id.js";
 import type { AppSlashCommand } from "../../types/command.js";
-import { encodeCustomId } from "../../utils/custom-id.js";
 import { formatMove } from "../../utils/format.js";
 import { collectMoves, findMoveById } from "../../utils/move.js";
 import { moveOracleRollSchema } from "../buttons/move-oracle-roll.js";

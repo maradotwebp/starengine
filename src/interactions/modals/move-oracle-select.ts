@@ -1,7 +1,8 @@
 import { MessageFlags, type ModalSubmitInteraction } from "discord.js";
+import { OracleWidget } from "@/core/components/oracle-widget.js";
+import { type CustomIdSchema, matchesCustomId } from "@/core/custom-id.js";
+import { findOracle } from "@/core/oracles.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
-import { type CustomIdSchema, matchesCustomId } from "../../utils/custom-id.js";
-import { getRollResponse } from "../commands/oracle.js";
 
 export const moveOracleSelectSchema: CustomIdSchema<
 	{ moveId: string },
@@ -23,10 +24,18 @@ export const interaction: AppModalInteraction = {
 			throw new Error("No oracle selected");
 		}
 
-		const components = await getRollResponse(selectedOracleId);
+		const oracle = findOracle(selectedOracleId);
+
+		if (!oracle) {
+			throw new Error("Oracle not found");
+		}
+
 		await interaction.deferUpdate();
 		await interaction.followUp({
-			components,
+			components: OracleWidget({
+				item: oracle,
+				value: undefined,
+			}),
 			flags: MessageFlags.IsComponentsV2,
 		});
 	},

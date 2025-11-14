@@ -8,13 +8,13 @@ import {
 	type ModalSubmitInteraction,
 	type TopLevelComponentData,
 } from "discord.js";
-import type { AppModalInteraction } from "../../types/interaction/modal.js";
 import {
 	type CustomIdSchema,
 	decodeCustomId,
 	encodeCustomId,
 	matchesCustomId,
-} from "../../utils/custom-id.js";
+} from "@/core/custom-id.js";
+import type { AppModalInteraction } from "../../types/interaction/modal.js";
 import { findTruthById, findTruthOptionById } from "../../utils/truths.js";
 import { truthsRerollSchema } from "../buttons/truths-reroll.js";
 import { getTruthComponents } from "../commands/truths.js";

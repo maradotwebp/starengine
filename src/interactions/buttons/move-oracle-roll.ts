@@ -6,16 +6,16 @@ import {
 	ModalBuilder,
 	StringSelectMenuBuilder,
 } from "discord.js";
-import type { AppButtonInteraction } from "../../types/interaction/button.js";
+import { OracleWidget } from "@/core/components/oracle-widget.js";
 import {
 	type CustomIdSchema,
 	decodeCustomId,
 	encodeCustomId,
 	matchesCustomId,
-} from "../../utils/custom-id.js";
+} from "@/core/custom-id.js";
+import { findOracle } from "@/core/oracles.js";
+import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import { findMoveById } from "../../utils/move.js";
-import { findRollableItemById } from "../../utils/oracle.js";
-import { getRollResponse } from "../commands/oracle.js";
 import { moveOracleSelectSchema } from "../modals/move-oracle-select.js";
 
 export const moveOracleRollSchema: CustomIdSchema<
@@ -44,20 +44,22 @@ export const interaction: AppButtonInteraction = {
 		}
 
 		if (oracles.length === 1) {
-			const components = await getRollResponse(oracles[0] as string);
+			const oracle = findOracle(oracles[0] as string);
+			if (!oracle) {
+				throw new Error("Oracle not found");
+			}
+
 			await interaction.deferUpdate();
 			await interaction.followUp({
-				components,
+				components: OracleWidget({
+					item: oracle,
+					value: undefined,
+				}),
 				flags: MessageFlags.IsComponentsV2,
 			});
 		} else {
 			const oracleItems = oracles
-				.map((oracleId) =>
-					findRollableItemById(
-						starforged["Oracle Categories"],
-						oracleId as string,
-					),
-				)
+				.map((oracleId) => findOracle(oracleId))
 				.filter((item): item is NonNullable<typeof item> => item !== null);
 
 			if (oracleItems.length === 0) {

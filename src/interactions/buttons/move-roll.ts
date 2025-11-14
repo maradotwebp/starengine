@@ -6,13 +6,13 @@ import {
 	TextInputBuilder,
 	TextInputStyle,
 } from "discord.js";
-import type { AppButtonInteraction } from "../../types/interaction/button.js";
-import type { CustomIdSchema } from "../../utils/custom-id.js";
+import type { CustomIdSchema } from "@/core/custom-id.js";
 import {
 	decodeCustomId,
 	encodeCustomId,
 	matchesCustomId,
-} from "../../utils/custom-id.js";
+} from "@/core/custom-id.js";
+import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import { findMoveById } from "../../utils/move.js";
 import { moveRollSelectSchema } from "../modals/move-roll.js";
 

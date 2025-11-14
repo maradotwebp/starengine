@@ -1,10 +1,10 @@
 import { type ButtonInteraction, MessageFlags } from "discord.js";
-import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import {
 	type CustomIdSchema,
 	decodeCustomId,
 	matchesCustomId,
-} from "../../utils/custom-id.js";
+} from "@/core/custom-id.js";
+import type { AppButtonInteraction } from "../../types/interaction/button.js";
 import { getProgressTrackComponents } from "../commands/progress.js";
 
 export const progressSetSchema: CustomIdSchema<

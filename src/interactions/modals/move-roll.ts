@@ -6,9 +6,9 @@ import {
 	TextDisplayBuilder,
 	ThumbnailBuilder,
 } from "discord.js";
+import type { CustomIdSchema } from "@/core/custom-id.js";
+import { decodeCustomId, matchesCustomId } from "@/core/custom-id.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
-import type { CustomIdSchema } from "../../utils/custom-id.js";
-import { decodeCustomId, matchesCustomId } from "../../utils/custom-id.js";
 import { performActionRoll } from "../../utils/dice.js";
 import { formatActionRollResult } from "../../utils/format.js";
 import { findMoveById } from "../../utils/move.js";
