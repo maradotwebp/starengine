@@ -41,8 +41,6 @@ export const command: AppSlashCommand = {
 		const formattedMove = formatMove(move);
 		const content = new TextDisplayBuilder().setContent(formattedMove);
 
-		console.log(move.Oracles);
-
 		await interaction.reply({
 			components: [
 				content.toJSON(),
