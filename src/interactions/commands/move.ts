@@ -1,4 +1,3 @@
-import { starforged } from "dataforged";
 import {
 	ActionRowBuilder,
 	type AutocompleteInteraction,
@@ -10,13 +9,13 @@ import {
 	TextDisplayBuilder,
 } from "discord.js";
 import { encodeCustomId } from "@/core/custom-id.js";
+import { collectMoveAutocomplete, findMove } from "@/core/moves.js";
 import type { AppSlashCommand } from "../../types/command.js";
 import { formatMove } from "../../utils/format.js";
-import { collectMoves, findMoveById } from "../../utils/move.js";
 import { moveOracleRollSchema } from "../buttons/move-oracle-roll.js";
 import { moveRollSchema } from "../buttons/move-roll.js";
 
-const allMoves = collectMoves(starforged["Move Categories"]);
+const allMoves = collectMoveAutocomplete();
 
 export const command: AppSlashCommand = {
 	data: new SlashCommandBuilder()
@@ -32,7 +31,7 @@ export const command: AppSlashCommand = {
 		.toJSON(),
 	execute: async (interaction: ChatInputCommandInteraction) => {
 		const moveId = interaction.options.getString("name", true);
-		const move = findMoveById(starforged["Move Categories"], moveId);
+		const move = findMove(moveId);
 
 		if (!move) {
 			throw new Error(`Could not find a move with ID "${moveId}".`);

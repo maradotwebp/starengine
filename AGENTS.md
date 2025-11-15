@@ -94,6 +94,8 @@ The bot interfaces with Ironsworn: Starforged oracles via the dataforged library
 - **Import Paths**: Use `@/` alias for imports from `src/` (configured in `tsconfig.json`) not in the same directory as the source file.
 - **Biome**: Code is formatted with tabs, double quotes (see `biome.json`).
 
+Always validate formatting and linting after code changes by running `bunx biome check`.
+
 ## Testing
 
 Tests use Bun's built-in test runner. Test files use `.test.ts` suffix. See `src/core/custom-id.test.ts` for examples of:

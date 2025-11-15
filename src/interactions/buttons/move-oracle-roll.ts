@@ -1,4 +1,3 @@
-import { starforged } from "dataforged";
 import {
 	type ButtonInteraction,
 	LabelBuilder,
@@ -13,9 +12,9 @@ import {
 	encodeCustomId,
 	matchesCustomId,
 } from "@/core/custom-id.js";
+import { findMove } from "@/core/moves.js";
 import { findOracle } from "@/core/oracles.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
-import { findMoveById } from "../../utils/move.js";
 import { moveOracleSelectSchema } from "../modals/move-oracle-select.js";
 
 export const moveOracleRollSchema: CustomIdSchema<
@@ -36,7 +35,7 @@ export const interaction: AppButtonInteraction = {
 			interaction.customId,
 		);
 
-		const move = findMoveById(starforged["Move Categories"], moveId);
+		const move = findMove(moveId);
 		const oracles = move?.Oracles ?? [];
 
 		if (oracles.length === 0) {

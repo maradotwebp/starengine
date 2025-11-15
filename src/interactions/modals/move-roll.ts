@@ -1,4 +1,3 @@
-import { starforged } from "dataforged";
 import {
 	MessageFlags,
 	type ModalSubmitInteraction,
@@ -8,10 +7,10 @@ import {
 } from "discord.js";
 import type { CustomIdSchema } from "@/core/custom-id.js";
 import { decodeCustomId, matchesCustomId } from "@/core/custom-id.js";
+import { findMove } from "@/core/moves.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
 import { performActionRoll } from "../../utils/dice.js";
 import { formatActionRollResult } from "../../utils/format.js";
-import { findMoveById } from "../../utils/move.js";
 
 export const moveRollSelectSchema: CustomIdSchema<
 	{ moveId: string },
@@ -30,7 +29,7 @@ export const interaction: AppModalInteraction = {
 			interaction.customId,
 		);
 
-		const move = findMoveById(starforged["Move Categories"], moveId);
+		const move = findMove(moveId);
 
 		if (!move) {
 			throw new Error(`Could not find move with ID "${moveId}".`);

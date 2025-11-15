@@ -1,4 +1,3 @@
-import { starforged } from "dataforged";
 import {
 	type ButtonInteraction,
 	LabelBuilder,
@@ -12,8 +11,8 @@ import {
 	encodeCustomId,
 	matchesCustomId,
 } from "@/core/custom-id.js";
+import { findMove } from "@/core/moves.js";
 import type { AppButtonInteraction } from "../../types/interaction/button.js";
-import { findMoveById } from "../../utils/move.js";
 import { moveRollSelectSchema } from "../modals/move-roll.js";
 
 export const moveRollSchema: CustomIdSchema<{ moveId: string }, [string]> = {
@@ -27,7 +26,7 @@ export const interaction: AppButtonInteraction = {
 	execute: async (interaction: ButtonInteraction) => {
 		const { moveId } = decodeCustomId(moveRollSchema, interaction.customId);
 
-		const move = findMoveById(starforged["Move Categories"], moveId);
+		const move = findMove(moveId);
 
 		if (!move) {
 			throw new Error(`Could not find move with ID "${moveId}".`);
