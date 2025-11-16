@@ -1,7 +1,7 @@
 import type { IOracle } from "dataforged";
 import { randomInt } from "@/core/random";
 import { getRow } from "@/core/rows";
-import { sanitizeText } from "@/core/text/sanitize";
+import { removeLinks } from "@/core/sanitize";
 import { OracleCategory } from "./oracle-category";
 import { OracleListItem } from "./oracle-list-item";
 import { OracleUsage } from "./oracle-usage";
@@ -26,8 +26,8 @@ export function Oracle({
 		if (!result) throw new Error(`No result found for value ${value}`);
 
 		return [
-			`## 🔮 ${sanitizeText(result.Result)}`,
-			result.Summary ? sanitizeText(result.Summary) : undefined,
+			`## 🔮 ${removeLinks(result.Result)}`,
+			result.Summary ? removeLinks(result.Summary) : undefined,
 			Source({
 				result: `${value}`,
 				source: `${oracle.Name} ${OracleUsage(oracle.Usage)}`,
