@@ -1,4 +1,5 @@
 import type { IMove } from "dataforged";
+import { removeLinks, removeTables } from "@/core/sanitize.js";
 import type { ActionRollResult } from "./dice.js";
 
 /**
@@ -10,56 +11,9 @@ import type { ActionRollResult } from "./dice.js";
  */
 export function formatMove(move: IMove): string {
 	const text = move.Text
-		? removeTables(sanitizeText(move.Text.replaceAll("\n\n", "\n")))
+		? removeTables(removeLinks(move.Text.replaceAll("\n\n", "\n")))
 		: "";
 	return [`## ${move.Display.Title}`, text ? `\n${text}` : ""].join("\n");
-}
-
-/**
- * Remove markdown tables from text, as they are handled via the Oracles property.
- *
- * @example
- * const formatted = removeTables("Roll | Result\n---|----\n1-4 | Test");
- * // Returns text with tables removed
- */
-function removeTables(text: string): string {
-	const lines = text.split("\n");
-	const result: string[] = [];
-	let i = 0;
-
-	while (i < lines.length) {
-		const currentLine = lines[i];
-		if (!currentLine) {
-			i++;
-			continue;
-		}
-
-		// Check if this line looks like a table header (contains |)
-		if (currentLine.includes("|")) {
-			// Check if next line is a separator (contains - and |)
-			const nextLine = lines[i + 1];
-			if (nextLine?.includes("|") && nextLine.match(/^[\s\-|:]+$/)) {
-				i += 2; // Skip header and separator
-
-				// Skip all table rows
-				while (i < lines.length) {
-					const rowLine = lines[i];
-					if (!rowLine || !rowLine.includes("|")) {
-						break;
-					}
-					i++;
-				}
-
-				// Skip the table entirely (don't add it to result)
-				continue;
-			}
-		}
-
-		result.push(currentLine);
-		i++;
-	}
-
-	return result.join("\n");
 }
 
 /**
@@ -100,9 +54,9 @@ You have it, but must choose one.
 	if (outcomeInfo) {
 		// Check if there's a "With a Match" variant and we have a match
 		if (hasMatch && outcomeInfo["With a Match"]) {
-			outcomeText = sanitizeText(outcomeInfo["With a Match"].Text);
+			outcomeText = removeLinks(outcomeInfo["With a Match"].Text);
 		} else {
-			outcomeText = sanitizeText(outcomeInfo.Text);
+			outcomeText = removeLinks(outcomeInfo.Text);
 		}
 	}
 	outcomeText = outcomeText.replace(/\n\n/g, "\n");
@@ -117,17 +71,4 @@ You have it, but must choose one.
 	].filter((line) => line !== undefined);
 
 	return content.join("\n");
-}
-
-/**
- * Sanitize a string to remove links to other items.
- *
- * The dataforged library uses links to other items in the string. This function removes those links.
- *
- * @example
- * const sanitized = sanitizeResult("[Action](Starforged/Oracles/Action)");
- * console.log(sanitized); // "*Action*"
- */
-export function sanitizeText(text: string): string {
-	return text.replace(/\[(?:⏵)?([^\]]+)\]\([^/]+\/([^)]+)\)/g, "*$1*");
 }
