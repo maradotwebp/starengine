@@ -62,7 +62,7 @@ export const interaction: AppModalInteraction = {
 		}
 
 		await interaction.deferUpdate();
-		await interaction.message.edit({
+		await interaction.editReply({
 			components,
 			flags: MessageFlags.IsComponentsV2,
 		});
