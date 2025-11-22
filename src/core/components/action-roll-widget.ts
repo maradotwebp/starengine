@@ -1,7 +1,11 @@
 import type { IMove } from "dataforged";
 import type { APIMessageTopLevelComponent } from "discord.js";
-import type { ActionRollResult } from "@/core/random";
+import type {
+	ActionRollResult,
+	ActionRollOutcome as IActionRollOutcome,
+} from "@/core/random";
 import { ActionRoll } from "./action-roll";
+import { ActionRollOutcome } from "./action-roll-outcome";
 import { Section } from "./section";
 
 export interface ActionRollWidgetProps {
@@ -13,14 +17,7 @@ export function ActionRollWidget({
 	move,
 	rollResult,
 }: ActionRollWidgetProps): APIMessageTopLevelComponent[] {
-	const icon = {
-		"Strong Hit":
-			"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-strong-hit.png",
-		"Weak Hit":
-			"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-weak-hit.png",
-		Miss: "https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-miss.png",
-	}[rollResult.outcome];
-
+	const icon = getIcon(rollResult.outcome);
 	return [
 		Section({
 			content: ActionRoll({ move, rollResult }),
@@ -31,5 +28,22 @@ export function ActionRollWidget({
 					}
 				: undefined,
 		}),
+		Section({
+			content: ActionRollOutcome({
+				move,
+				hasMatch: rollResult.hasMatch,
+				outcome: rollResult.outcome,
+			}),
+		}),
 	];
+}
+
+function getIcon(outcome: IActionRollOutcome): string | undefined {
+	return {
+		"Strong Hit":
+			"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-strong-hit.png",
+		"Weak Hit":
+			"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-weak-hit.png",
+		Miss: "https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-miss.png",
+	}[outcome];
 }

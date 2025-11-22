@@ -53,7 +53,8 @@ export const interaction: AppModalInteraction = {
 		}
 
 		const rollResult = performActionRoll(stat, bonus);
-		await interaction.reply({
+		await interaction.deferUpdate();
+		await interaction.editReply({
 			components: ActionRollWidget({ move, rollResult }),
 			flags: MessageFlags.IsComponentsV2,
 		});

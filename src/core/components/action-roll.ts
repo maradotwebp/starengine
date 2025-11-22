@@ -1,6 +1,5 @@
 import type { IMove } from "dataforged";
 import type { ActionRollResult } from "@/core/random";
-import { removeLinks } from "@/core/sanitize";
 
 export interface ActionRollProps {
 	move: IMove;
@@ -19,26 +18,13 @@ export function ActionRoll({ move, rollResult }: ActionRollProps): string {
 	} = rollResult;
 
 	const bonusDisplay = bonus !== 0 ? ` + **${bonus}** (+bonus)` : "";
-	const outcomeInfo = move.Outcomes?.[outcome];
-	let outcomeText = "";
-	if (outcomeInfo) {
-		// Check if there's a "With a Match" variant and we have a match
-		if (hasMatch && outcomeInfo["With a Match"]) {
-			outcomeText = removeLinks(outcomeInfo["With a Match"].Text);
-		} else {
-			outcomeText = removeLinks(outcomeInfo.Text);
-		}
-	}
-	outcomeText = outcomeText.replace(/\n\n/g, "\n");
-
-	const content = [
+	return [
 		`## **${outcome}**`,
 		`**${actionDie}** (+ :game_die:) + **${stat}** (+stat)${bonusDisplay} → **${actionScore}** vs ${challengeDice[0]}, ${challengeDice[1]}`,
 		hasMatch ? `**MATCH!**` : undefined,
 		`-# \`→ ${actionScore} vs ${challengeDice[0]}, ${challengeDice[1]}\` ◇ ${move.Display.Title}`,
 		``,
-		outcomeText,
-	].filter((line) => line !== undefined);
-
-	return content.join("\n");
+	]
+		.filter((line) => line !== undefined)
+		.join("\n");
 }
