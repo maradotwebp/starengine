@@ -1,6 +1,6 @@
 # 🌠 starengine
 
-[![Static Badge](https://img.shields.io/badge/App-Install-blue?style=for-the-badge&logo=discord)]((https://discord.com/oauth2/authorize?client_id=1436127174825611314)) ![GitHub last commit](https://img.shields.io/github/last-commit/maradotwebp/starengine?style=flat-square) ![GitHub Repo stars](https://img.shields.io/github/stars/maradotwebp/starengine?style=flat-square)
+![Static Badge](https://img.shields.io/badge/App-Install-blue?style=for-the-badge&logo=discord&link=https%3A%2F%2Fdiscord.com%2Foauth2%2Fauthorize%3Fclient_id%3D1436127174825611314) ![GitHub last commit](https://img.shields.io/github/last-commit/maradotwebp/starengine?style=flat-square) ![GitHub Repo stars](https://img.shields.io/github/stars/maradotwebp/starengine?style=flat-square)
 
 
 **starengine** is a Discord bot designed to allow for play of the [Ironsworn: Starforged](https://tomkinpress.com/pages/ironsworn-starforged) roleplaying system over Discord. The bot enables play-by-post gameplay with interactive commands, oracle rolls, and move resolution.
