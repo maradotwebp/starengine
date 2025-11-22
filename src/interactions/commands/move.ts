@@ -1,19 +1,12 @@
 import {
-	ActionRowBuilder,
 	type AutocompleteInteraction,
-	ButtonBuilder,
-	ButtonStyle,
 	type ChatInputCommandInteraction,
 	MessageFlags,
 	SlashCommandBuilder,
-	TextDisplayBuilder,
 } from "discord.js";
-import { encodeCustomId } from "@/core/custom-id.js";
+import { MoveWidget } from "@/core/components/move-widget";
 import { collectMoveAutocomplete, findMove } from "@/core/moves.js";
 import type { AppSlashCommand } from "../../types/command.js";
-import { formatMove } from "../../utils/format.js";
-import { moveOracleRollSchema } from "../buttons/move-oracle-roll.js";
-import { moveRollSchema } from "../buttons/move-roll.js";
 
 const allMoves = collectMoveAutocomplete();
 
@@ -37,36 +30,8 @@ export const command: AppSlashCommand = {
 			throw new Error(`Could not find a move with ID "${moveId}".`);
 		}
 
-		const formattedMove = formatMove(move);
-		const content = new TextDisplayBuilder().setContent(formattedMove);
-
 		await interaction.reply({
-			components: [
-				content.toJSON(),
-				new ActionRowBuilder<ButtonBuilder>()
-					.addComponents(
-						new ButtonBuilder()
-							.setCustomId(
-								encodeCustomId(moveRollSchema, {
-									moveId: move.$id,
-								}),
-							)
-							.setDisabled(!move.Outcomes)
-							.setEmoji("🎲")
-							.setStyle(ButtonStyle.Primary),
-						new ButtonBuilder()
-							.setCustomId(
-								encodeCustomId(moveOracleRollSchema, {
-									moveId: move.$id,
-								}),
-							)
-							.setDisabled((move.Oracles?.length ?? 0) === 0)
-							.setEmoji("🔮")
-							.setLabel("Roll on table")
-							.setStyle(ButtonStyle.Secondary),
-					)
-					.toJSON(),
-			],
+			components: MoveWidget({ move }),
 			flags: MessageFlags.IsComponentsV2,
 		});
 	},

@@ -1,16 +1,10 @@
-import {
-	MessageFlags,
-	type ModalSubmitInteraction,
-	SectionBuilder,
-	TextDisplayBuilder,
-	ThumbnailBuilder,
-} from "discord.js";
+import { MessageFlags, type ModalSubmitInteraction } from "discord.js";
+import { ActionRollWidget } from "@/core/components/action-roll-widget";
 import type { CustomIdSchema } from "@/core/custom-id.js";
 import { decodeCustomId, matchesCustomId } from "@/core/custom-id.js";
 import { findMove } from "@/core/moves.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
 import { performActionRoll } from "../../utils/dice.js";
-import { formatActionRollResult } from "../../utils/format.js";
 
 export const moveRollSelectSchema: CustomIdSchema<
 	{ moveId: string },
@@ -64,25 +58,8 @@ export const interaction: AppModalInteraction = {
 		// Perform the action roll
 		const rollResult = performActionRoll(stat, bonus);
 
-		// Format and send the result
-		const formattedResult = formatActionRollResult(move, rollResult);
-
-		const icon = {
-			"Strong Hit":
-				"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-strong-hit.png",
-			"Weak Hit":
-				"https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-weak-hit.png",
-			Miss: "https://raw.githubusercontent.com/maradotwebp/dataforged-png/refs/heads/main/img/vector/outcomes/outcome-miss.png",
-		}[rollResult.outcome];
-
 		await interaction.reply({
-			components: [
-				new SectionBuilder()
-					.addTextDisplayComponents(
-						new TextDisplayBuilder().setContent(formattedResult),
-					)
-					.setThumbnailAccessory(new ThumbnailBuilder().setURL(icon)),
-			],
+			components: ActionRollWidget({ move, rollResult }),
 			flags: MessageFlags.IsComponentsV2,
 		});
 	},
