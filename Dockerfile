@@ -1,6 +1,9 @@
 # Use the official Bun image to run the application
 FROM oven/bun:1
 
+# Add curl for health checks
+RUN apt-get update && apt-get install -y curl
+
 # Set the work directory to `/app`
 WORKDIR /app
 
