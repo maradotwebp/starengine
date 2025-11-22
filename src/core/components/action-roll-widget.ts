@@ -1,6 +1,6 @@
 import type { IMove } from "dataforged";
 import type { APIMessageTopLevelComponent } from "discord.js";
-import type { ActionRollResult } from "@/utils/dice";
+import type { ActionRollResult } from "@/core/random";
 import { ActionRoll } from "./action-roll";
 import { Section } from "./section";
 

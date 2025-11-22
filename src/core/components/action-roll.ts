@@ -1,6 +1,6 @@
 import type { IMove } from "dataforged";
+import type { ActionRollResult } from "@/core/random";
 import { removeLinks } from "@/core/sanitize";
-import type { ActionRollResult } from "@/utils/dice";
 
 export interface ActionRollProps {
 	move: IMove;

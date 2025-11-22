@@ -3,8 +3,8 @@ import { ActionRollWidget } from "@/core/components/action-roll-widget";
 import type { CustomIdSchema } from "@/core/custom-id.js";
 import { decodeCustomId, matchesCustomId } from "@/core/custom-id.js";
 import { findMove } from "@/core/moves.js";
+import { performActionRoll } from "@/core/random.js";
 import type { AppModalInteraction } from "../../types/interaction/modal.js";
-import { performActionRoll } from "../../utils/dice.js";
 
 export const moveRollSelectSchema: CustomIdSchema<
 	{ moveId: string },
@@ -35,11 +35,9 @@ export const interaction: AppModalInteraction = {
 			);
 		}
 
-		// Parse input values
 		const statInput = interaction.fields.getTextInputValue("stat");
 		const bonusInput = interaction.fields.getTextInputValue("bonus");
 
-		// Validate stat value
 		const stat = Number.parseInt(statInput, 10);
 		if (Number.isNaN(stat)) {
 			throw new Error(
@@ -47,7 +45,6 @@ export const interaction: AppModalInteraction = {
 			);
 		}
 
-		// Validate bonus value
 		const bonus = bonusInput ? Number.parseInt(bonusInput, 10) : 0;
 		if (Number.isNaN(bonus)) {
 			throw new Error(
@@ -55,9 +52,7 @@ export const interaction: AppModalInteraction = {
 			);
 		}
 
-		// Perform the action roll
 		const rollResult = performActionRoll(stat, bonus);
-
 		await interaction.reply({
 			components: ActionRollWidget({ move, rollResult }),
 			flags: MessageFlags.IsComponentsV2,
