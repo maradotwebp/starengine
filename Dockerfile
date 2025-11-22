@@ -13,8 +13,11 @@ RUN bun install --production --frozen-lockfile
 # Copy the rest of the application into the container
 COPY . .
 
-# Expose the port (DigitalOcean will set PORT env var)
+# Expose the port
 EXPOSE 8080
+
+# Set environment to production
+ENV NODE_ENV=production
 
 # Run the application
 CMD ["bun", "run", "start"]

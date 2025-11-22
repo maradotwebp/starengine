@@ -38,11 +38,6 @@ if (!token) {
 	throw new Error("Missing Discord token (DISCORD_TOKEN environment variable)");
 }
 
-const guildId = process.env.DEV_GUILD_ID as string;
-if (!guildId) {
-	throw new Error("Missing guild ID (DEV_GUILD_ID environment variable)");
-}
-
 /**
  * Load commands from the commands directory.
  */
@@ -249,6 +244,10 @@ client.once(Events.ClientReady, async (c) => {
 			});
 			console.log("Successfully reloaded application (/) commands.");
 		} else {
+			const guildId = process.env.DEV_GUILD_ID as string;
+			if (!guildId) {
+				throw new Error("Missing guild ID (DEV_GUILD_ID environment variable)");
+			}
 			await rest.put(Routes.applicationGuildCommands(c.user.id, guildId), {
 				body: commandsData,
 			});
