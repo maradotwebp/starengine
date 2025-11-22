@@ -13,6 +13,7 @@ import type { AppButtonInteraction } from "./types/interaction/button.ts";
 import type { AppModalInteraction } from "./types/interaction/modal.ts";
 
 import "./types/discord.d.ts";
+import { serve } from "bun";
 import type { AppSlashCommand } from "./types/command.ts";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -31,6 +32,16 @@ client.modalInteractions = new Collection<
 	string | ((customId: string) => boolean),
 	AppModalInteraction
 >();
+
+const token = process.env.DISCORD_TOKEN as string;
+if (!token) {
+	throw new Error("Missing Discord token (DISCORD_TOKEN environment variable)");
+}
+
+const guildId = process.env.DEV_GUILD_ID as string;
+if (!guildId) {
+	throw new Error("Missing guild ID (DEV_GUILD_ID environment variable)");
+}
 
 /**
  * Load commands from the commands directory.
@@ -232,23 +243,29 @@ client.once(Events.ClientReady, async (c) => {
 			(command) => command.data,
 		);
 
-		/*
-		 * Register commands globally (this can take up to an hour to propagate)
-		 * await rest.put(
-		 *   Routes.applicationCommands(c.user.id),
-		 *   { body: commandsData }
-		 * );
-		 * console.log('Successfully reloaded application (/) commands.');
-		 */
+		if (process.env.NODE_ENV === "production") {
+			await rest.put(Routes.applicationCommands(c.user.id), {
+				body: commandsData,
+			});
+			console.log("Successfully reloaded application (/) commands.");
+		} else {
+			await rest.put(Routes.applicationGuildCommands(c.user.id, guildId), {
+				body: commandsData,
+			});
+			console.log("Successfully reloaded application guild (/) commands.");
+		}
 
-		await rest.put(
-			Routes.applicationGuildCommands(c.user.id, "1436123427365851187"),
-			{ body: commandsData },
-		);
-		console.log("Successfully reloaded application guild (/) commands.");
+		const server = serve({
+			port: 3000,
+			routes: {
+				"/api/health": new Response("OK"),
+			},
+		});
+
+		console.log(`Healthcheck server running at ${server.url}`);
 	} catch (error) {
 		console.error(error);
 	}
 });
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(token);
